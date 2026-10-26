@@ -1,0 +1,21 @@
+{
+  "checked_at_utc": "2026-10-26T10:54:34.315227+00:00",
+  "project_directory": "D:\\data_recipe_research",
+  "code_sha256": "6f322c146e4f0971dba74856bb7f0cc10fc1e3b9a1a3e767734478e4c1866d98",
+  "offline_unit_tests": {
+    "command": "python -B -m unittest discover -s tests -v",
+    "passed": 19,
+    "failed": 0
+  },
+  "python_syntax_files_checked": 18,
+  "cli_help_entrypoints_checked": 9,
+  "local_torch": "2.6.0+cpu",
+  "cuda_available": false,
+  "pretrained_weights_downloaded": false,
+  "full_dataset_downloaded": false,
+  "notes": [
+    "Read public documentation, dataset schema and one example in memory only.",
+    "CPU tests used synthetic tokenization and tiny randomly initialized networks.",
+    "Real Qwen3 BF16/AdamW8bit training, tokenizer execution and GPU generation must be validated on the server using smoke_test.py."
+  ]
+}
