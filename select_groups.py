@@ -1,11 +1,11 @@
 """Build source/length-matched low/mid/high initial-loss subsets without a GPU."""
 import argparse
 import math
-from pathlib import Path
 import statistics
 
 from recipe.common import file_hash, fresh_dir, iter_jsonl, read_json, snapshot_code, validate_prepared, write_json, write_jsonl
 from recipe.data import matched_loss_groups
+from recipe.paths import artifact_path
 
 
 def main():
@@ -19,7 +19,7 @@ def main():
     args = p.parse_args()
     if args.length_bin < 1 or args.size < 1:
         p.error("size and length-bin must be positive")
-    data, scores = Path(args.data), Path(args.scores)
+    data, scores = artifact_path(args.data), artifact_path(args.scores)
     manifest = validate_prepared(data)
     identity = read_json(scores / "identity.json")
     if (identity["pool_sha256"] != file_hash(data / "pool.jsonl") or identity["model"] != manifest["model"]
@@ -33,7 +33,7 @@ def main():
     if not all(math.isfinite(v) for v in values.values()):
         raise ValueError("Nonfinite initial loss")
     groups, matching = matched_loss_groups(rows, values, args.size, args.seed, args.length_bin)
-    out = fresh_dir(args.out)
+    out = fresh_dir(artifact_path(args.out))
     stats = {}
     for name, selected in groups.items():
         write_jsonl(out / f"{name}.jsonl", [{**r, "base_mean_loss": values[r["sample_id"]]} for r in selected])

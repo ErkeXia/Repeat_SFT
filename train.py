@@ -14,6 +14,7 @@ from recipe.common import (append_jsonl, capture_rng, digest, environment, epoch
 from recipe.checkpoints import latest_recovery, prune_recovery, save_checkpoint
 from recipe.encoding import encode_example, inspect_example, pad_batch
 from recipe.modeling import load_model, training_loss
+from recipe.paths import artifact_path, configure_runtime
 
 
 def main():
@@ -29,10 +30,12 @@ def main():
     args = p.parse_args()
     if int(os.environ.get("WORLD_SIZE", "1")) != 1:
         raise ValueError("Use one process/GPU: distributed execution would change batch/update semantics")
+    configure_runtime()
     import torch
     import bitsandbytes as bnb
     from transformers import AutoTokenizer
-    run = Path(args.run).resolve()
+    run = artifact_path(args.run)
+    print(f"Run directory: {run}", flush=True)
     attempt = now().replace(":", "-") + "-" + uuid.uuid4().hex[:8]
 
     if args.resume:
@@ -43,7 +46,7 @@ def main():
         for name, expected in metadata["data_files"].items():
             if file_hash(run / "data" / name) != expected:
                 raise ValueError(f"Run input modified: {name}")
-        source = latest_recovery(run) if args.resume == "latest" else Path(args.resume).resolve()
+        source = latest_recovery(run) if args.resume == "latest" else artifact_path(args.resume)
         if not source.is_relative_to(run):
             raise ValueError("Recovery checkpoint must belong to this run")
         if not (source / "complete.json").exists():
@@ -52,7 +55,9 @@ def main():
     else:
         if not args.data:
             p.error("--data is required for a fresh run")
-        prepared = Path(args.data).resolve()
+        prepared = artifact_path(args.data)
+        if args.subset:
+            args.subset = artifact_path(args.subset)
         manifest = validate_prepared(prepared)
         config = read_json(args.config)
         if args.seed is not None:

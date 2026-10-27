@@ -1,11 +1,11 @@
 """Export curve tables and early/late rankings from completed saved results."""
 import argparse
 import csv
-from pathlib import Path
 import statistics
 
 from recipe.common import digest, file_hash, fresh_dir, iter_jsonl, read_json, write_json
 from smoke_test import canonical_logs
+from recipe.paths import artifact_path
 
 
 def csv_write(path, rows):
@@ -23,12 +23,12 @@ def main():
     p.add_argument("--run", action="append", nargs=3, metavar=("NAME", "RUN_DIR", "GRADE_DIR"), required=True)
     p.add_argument("--out", required=True)
     args = p.parse_args()
-    out = fresh_dir(args.out)
+    out = fresh_dir(artifact_path(args.out))
     curves, training, provenance, windows = [], [], [], []
     panel_hashes = set()
     comparison_settings = set()
     for name, run_name, grade_name in args.run:
-        run, grades = Path(run_name), Path(grade_name)
+        run, grades = artifact_path(run_name), artifact_path(grade_name)
         metadata = read_json(run / "run.json")
         grading_manifest = read_json(grades / "grading_manifest.json")
         for source in grading_manifest["sources"]:

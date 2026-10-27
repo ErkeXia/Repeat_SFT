@@ -159,7 +159,8 @@ def snapshot_code(destination):
     git = {}
     for key, args in (("commit", ["rev-parse", "HEAD"]), ("status", ["status", "--porcelain"]),
                       ("diff", ["diff", "HEAD", "--"])):
-        result = subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True) if shutil.which("git") else None
+        result = subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True,
+                                text=True, encoding="utf-8", errors="replace") if shutil.which("git") else None
         git[key] = result.stdout if result and result.returncode == 0 else None
     write_json(destination / "manifest.json", {"files": manifest, "code_sha256": digest(manifest), "git": git})
     return digest(manifest)

@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
-from pathlib import Path
 import statistics
 
 from recipe.common import environment, file_hash, fresh_dir, iter_jsonl, read_json, snapshot_code, write_json, write_jsonl
 from recipe.grading import GRADER_VERSION, grade_one
+from recipe.paths import artifact_path
 
 
 def summarize(rows):
@@ -39,11 +39,11 @@ def main():
     p.add_argument("--allow-partial", action="store_true", help="Explicitly label incomplete panels for debugging")
     args = p.parse_args()
     import math_verify  # Missing symbolic verifier must fail, not silently degrade.
-    source = Path(args.responses)
+    source = artifact_path(args.responses)
     files = [source] if source.is_file() else sorted(source.glob("epoch-*/responses.jsonl"))
     if not files:
         raise ValueError("No response files")
-    out = fresh_dir(args.out)
+    out = fresh_dir(artifact_path(args.out))
     code_hash = snapshot_code(out / "code")
     provenance, summaries = [], []
     for file in files:

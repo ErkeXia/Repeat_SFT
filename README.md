@@ -16,7 +16,7 @@
 | `score_pool.py` / `select_groups.py` | 原始 Base 对候选池打分，生成低／中／高损失匹配组 |
 | `smoke_test.py` | 32 步连续训练与硬中断恢复对照，真实权重保存加载，少量生成判分 |
 | `export_curves.py` | 导出训练日志、评测曲线和早期／后期描述性排名 CSV |
-| `tests/test_offline.py` | 无下载的 CPU 单元测试 |
+| `tests/test_offline.py` / `tests/test_storage_resume.py` | 无下载的 CPU 测试、存储路径与旧烟雾测试恢复检查 |
 
 ## 1. 服务器环境
 
@@ -27,9 +27,13 @@ python -m venv .venv
 source .venv/bin/activate
 # 在此安装适合服务器驱动的 CUDA 版 torch，然后：
 python -m pip install -r requirements.txt
-mkdir -p .cache/huggingface .cache/tmp
-export HF_HOME="$PWD/.cache/huggingface"
-export TMPDIR="$PWD/.cache/tmp"
+export REPEAT_SFT_ROOT=/data/repeat_sft
+# /data 必须已挂载；新服务器首次创建目录时可能需要 sudo：
+mountpoint -q /data
+sudo install -d -o "$(id -u)" -g "$(id -g)" "$REPEAT_SFT_ROOT"
+export HF_HOME="$REPEAT_SFT_ROOT/.cache/huggingface"
+export TMPDIR="$REPEAT_SFT_ROOT/.cache/tmp"
+mkdir -p "$HF_HOME" "$TMPDIR"
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
 export CUDA_VISIBLE_DEVICES=0
 python -B -m unittest discover -s tests -v
@@ -38,6 +42,61 @@ python -B -m unittest discover -s tests -v
 这不是 LoRA，也不是 8bit 权重量化：训练参数为 BF16，8bit 指优化器状态。长序列和全参数训练仍占显存；LM head 分块计算交叉熵，减轻完整词表 logits 的峰值，但没有承诺某张小显存卡一定可运行。先用服务器烟雾测试测实际用量。检查点含完整模型和训练状态，单组预计需要约 150–200 GB，加上缓存、烟雾测试与多组实验应额外预留空间；这是按约 4B 参数估算，具体以磁盘实测为准。
 
 GPQA 使用 `Idavidrein/gpqa` 的 `gpqa_diamond` 配置，64 题选自其训练 split；它在这里仍是下游评测集。需要先在 Hugging Face 取得访问权限并通过 `hf auth login` 登录，或者传入已有合法访问的 `--gpqa-csv path/to/gpqa_diamond.csv`。脚本不绕过授权，也不自动改用不同数据源。
+
+### 存储目录与现有 VM 的一次迁移
+
+所有实验脚本将相对的运行、准备数据、分组和结果路径解释为 **`/data/repeat_sft` 下的路径**，因此后面的命令仍写 `runs/...`、`artifacts/...`。例如 `--run runs/random-s42` 实际写入 `/data/repeat_sft/runs/random-s42`，检查点、恢复状态、日志及默认评测结果都在该目录中。可用绝对路径环境变量 `REPEAT_SFT_ROOT` 更改根目录；显式传入的绝对路径仍按指定位置使用。`--config` 和准备阶段的原始输入文件参数仍相对于当前工程目录。
+
+训练、数据准备和生成入口在导入 Hugging Face 库之前，将未设置的 `HF_HOME`、`TMPDIR` 默认设到这个根目录的 `.cache/` 下。已有环境变量会被尊重，所以迁移后请用下面的 `export` 明确指定。使用 `/data` 路径时会检查挂载；卷未挂载就报错，避免误写系统盘。
+
+**已经有失败的 `runs/smoke-s42` 时，先迁移原文件，再续跑，不要重新 prepare 数据。** 停止正在运行的训练、评测和 smoke 进程。在 VM 的工程根目录 `git pull` 后执行以下一次迁移。代码与 `.venv` 留在工程目录；迁移 `runs`、`artifacts`、工程下的 `.cache`，并在旧位置建立符号链接，保留旧命令的路径兼容性。整个 smoke 目录都要保留，包括配置、日志、代码快照和恢复点。
+
+```bash
+# 在 VM 上执行；如果实际工程位置不同，只修改这一行。
+cd /home/ubuntu/data_recipe/Repeat_SFT
+git pull
+
+bash <<'BASH'
+set -euo pipefail
+mountpoint -q /data || { echo '/data 尚未挂载，停止迁移' >&2; exit 1; }
+target_root=/data/repeat_sft
+sudo install -d -o "$(id -u)" -g "$(id -g)" "$target_root"
+# 先检查全部目的地，避免覆盖已经存在的实验。
+for name in runs artifacts .cache; do
+    target="$target_root/$name"
+    if [ -L "$name" ]; then
+        [ "$(readlink -f -- "$name")" = "$target" ] || { echo "现有链接指向其他位置：$name" >&2; exit 1; }
+    elif [ -e "$name" ]; then
+        [ -d "$name" ] || { echo "$name 不是目录" >&2; exit 1; }
+        if [ -e "$target" ] || [ -L "$target" ]; then
+            echo "目标已存在，请先核对，未执行覆盖：$target" >&2; exit 1
+        fi
+    fi
+done
+for name in runs artifacts .cache; do
+    target="$target_root/$name"
+    [ ! -L "$name" ] || continue
+    if [ -d "$name" ]; then mv -T -- "$name" "$target"; fi
+    if [ -d "$target" ]; then ln -s -- "$target" "$name"; fi
+done
+BASH
+```
+
+约 61 GiB 的已有 smoke 文件要跨盘复制，迁移期间请等待命令结束。这里没有清空或覆盖目标目录；若目标已经存在，脚本停止，先核对两处内容。若此前缓存放在工程以外（例如 `~/.cache/huggingface` 或另设的 `HF_HUB_CACHE`），它不会被上述命令迁移；需将实际缓存复制到卷上并核对后再切换对应环境变量，避免重复下载。不要修改运行中的 `run.json`、各类 manifest 或原始代码快照。
+
+迁移后设置当前终端环境并检查空间：
+
+```bash
+export REPEAT_SFT_ROOT=/data/repeat_sft
+export HF_HOME="$REPEAT_SFT_ROOT/.cache/huggingface"
+export TMPDIR="$REPEAT_SFT_ROOT/.cache/tmp"
+mkdir -p "$HF_HOME" "$TMPDIR"
+source .venv/bin/activate
+df -h / /data
+readlink -f runs/smoke-s42
+```
+
+最后一行应显示 `/data/repeat_sft/runs/smoke-s42`。终端新开后如需显式设置这些变量，可以重复上述 `export`。新脚本本身也有相同默认值。
 
 ## 2. 准备并冻结数据
 
@@ -77,6 +136,22 @@ python smoke_test.py --data artifacts/data-s42 --out runs/smoke-s42
 通过才写 `SUCCESS.json`；失败会留下证据，禁止静默放宽误差。默认烟雾生成上限 **512 token**，只用于连通性验证，可能尚未输出最终答案；正式配置仍为 **30,000**。可以传 `--generation-max-new-tokens 30000` 额外验证正式长度预算。烟雾测试全程不要求正确率提升，但要查看 `data/inspection.jsonl`、逐步 loss 和生成输出；其作用是排除管线错误，不是衡量学习效果。
 
 本机只有 CPU；真实 CUDA/BF16/bitsandbytes 烟雾测试尚未在本机执行。CPU 测试验证的是合成 token、小型随机网络上的损失、梯度与保存恢复不变量，不替代上面的真实服务器测试。
+
+### 恢复没有跑完的 smoke test
+
+完成上面的一次迁移后，用同一个输出目录加 `--resume`：
+
+```bash
+python smoke_test.py --data artifacts/data-s42 --out runs/smoke-s42 --resume
+```
+
+脚本核验冻结数据、配置和代码，检查两个训练分支的完整检查点。已到第 32 步且第 4 轮检查点完整的分支会跳过；未完成的分支从最新完整恢复点继续。针对这次连续分支已完成、恢复分支写盘失败的情况，会跳过 `continuous`，恢复 `resumed`，然后继续比较权重、计算拟合指标、生成和判分。若第 16 步保存失败而第 8 步恢复点完整，则从第 8 步重放；实际位置以终端打印出的检查点路径为准。`.partial-*` 目录不会被选为恢复点，旧日志与旧检查点也不会被覆盖。
+
+**`git pull` 后续跑旧 smoke 会自动使用经哈希校验的原始代码快照。** 旧版本没有顶层 `code/` 时，从 `continuous/attempts/.../code/` 中查找。这样两个分支仍使用同一版训练代码，保持逐位比较的意义；新存储路径通过绝对参数和环境变量传入。旧快照继续保留旧版保存逻辑，新版每次写盘空间预检查只作用于新版代码创建的运行；当前 smoke 入口对新旧运行都会先做剩余空间检查。
+
+原有命令和逐步日志保留；新子进程退出状态另记在 `command_results.jsonl`。已完成的逐题评测会按原协议跳过；如果已存在 `grades/`，重判写入新的 `grades-retry-*`，最终路径记录在 `SUCCESS.json` 的 `grading_output`。只有日志、权重比较和评测判分均通过才写成功标记。
+
+恢复不是把新数据或新配置混入旧运行。若原始快照被改、冻结数据不同，或尚无任何完整检查点，会明确失败并保留现有文件；这时应保留失败目录，另选新输出目录启动。新 smoke 会在开始时冻结顶层配置和代码，后续同样使用 `--resume`。恢复时生成长度必须沿用原配置。默认要求输出文件系统至少有 100 GiB 可用空间，可显式传 `--min-free-gib` 调整；这是保守的启动检查，不是整个实验占用上限。
 
 ## 4. 正式随机基线
 
@@ -180,6 +255,6 @@ run/
   grades-v1/, grades-v2/           # 可独立重跑的答案抽取和判分
 ```
 
-训练状态 `.pt` 使用 pickle，恢复函数只用于本工程自己生成的可信检查点。模型权重使用 safetensors。不同 run 必须用不同目录；不要删除关键权重来节约临时空间，否则无法补做未来评测。滚动恢复点淘汰和 `.test_tmp` 测试临时文件是唯一自动删除的内容。
+训练状态 `.pt` 使用 pickle，恢复函数只用于本工程自己生成的可信检查点。模型权重使用 safetensors。不同 run 必须用不同目录；不要删除关键权重来节约临时空间，否则无法补做未来评测。新版每次保存前按模型和优化器张量估计所需空间，并留出余量；检查通过后仍可能受并发写盘或配额影响。捕获到写入失败时，仅清理本次保存创建的未发布临时目录，保留已有完整恢复点和关键权重。其他历史 `.partial-*` 不自动删除。除此之外，自动删除只包括按配置淘汰的滚动恢复点及 `.test_tmp` 测试临时文件。
 
 对读入格式和数值的关键假设都采用显式检查。当前交付没有多 GPU、vLLM 或自动调参；这些改动应形成有记录的新实验协议。64 轮是观察窗口，不是训练有效性的先验结论，最后一轮也不被视作默认最优。

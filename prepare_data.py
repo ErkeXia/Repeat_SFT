@@ -12,6 +12,7 @@ from recipe.common import (append_jsonl, environment, file_hash, fresh_dir, iter
 from recipe.data import OverlapIndex, adapt_gpqa, adapt_math, adapt_sft, unique_questions
 from recipe.encoding import encode_example, inspect_example
 from recipe.grading import grade_one
+from recipe.paths import artifact_path, configure_runtime
 
 
 def main():
@@ -37,13 +38,15 @@ def main():
     args = p.parse_args()
     if min(args.train_size, args.holdout_size, args.math_size, args.gpqa_size, args.max_length) < 1:
         p.error("Sizes must be positive")
+    configure_runtime()
     # Heavy dependencies are imported only after argparse, so --help is offline.
     from datasets import load_dataset
     from huggingface_hub import HfApi
     from transformers import AutoTokenizer
     import math_verify  # Fail before scanning if the declared verifier is missing.
 
-    out = fresh_dir(args.out)
+    out = fresh_dir(artifact_path(args.out))
+    print(f"Prepared data directory: {out}", flush=True)
     api = HfApi()
     model_sha = api.model_info(args.model, revision=args.model_revision).sha
     tokenizer = AutoTokenizer.from_pretrained(args.model, revision=model_sha, trust_remote_code=False)

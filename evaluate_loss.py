@@ -1,12 +1,12 @@
 """SERVER ONLY: per-sample NLL and teacher-forced token accuracy at milestones."""
 import argparse
 import gc
-from pathlib import Path
 
 from recipe.common import (checkpoint_path, environment, file_hash, iter_jsonl, read_json,
                            seed_everything, snapshot_code, write_json)
 from recipe.evaluation import bind_output, evaluate_rows
 from recipe.modeling import load_model
+from recipe.paths import artifact_path, configure_runtime
 
 
 def main():
@@ -17,12 +17,13 @@ def main():
     p.add_argument("--chunk-size", type=int, default=128)
     p.add_argument("--limit-per-split", type=int, help="Smoke only; formal evaluation uses every example")
     args = p.parse_args()
+    configure_runtime()
     import torch
     from transformers import AutoTokenizer
-    run = Path(args.run).resolve()
+    run = artifact_path(args.run)
     metadata = read_json(run / "run.json")
     tokenizer = AutoTokenizer.from_pretrained(run / "tokenizer", local_files_only=True)
-    base = Path(args.out) if args.out else run / "evaluations" / "teacher_forcing"
+    base = artifact_path(args.out) if args.out else run / "evaluations" / "teacher_forcing"
     seed_everything(metadata["config"]["seed"])
     if args.chunk_size < 1 or (args.limit_per_split is not None and args.limit_per_split < 1):
         raise ValueError("Chunk size and sample limits must be positive")

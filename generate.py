@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import argparse
 import gc
-from pathlib import Path
 import time
 
 from recipe.common import (append_jsonl, checkpoint_path, environment, file_hash, iter_jsonl, read_json,
                            recover_jsonl, seed_everything, snapshot_code, stable_seed, write_json)
 from recipe.evaluation import bind_output
 from recipe.modeling import load_model
+from recipe.paths import artifact_path, configure_runtime
 
 
 def stop_details(ids, eos_id, chat_end_id, limit):
@@ -31,9 +31,10 @@ def main():
     p.add_argument("--out", help="Defaults to RUN/evaluations/generation")
     p.add_argument("--limit-per-task", type=int, help="Smoke test only; records a distinct evaluation identity")
     args = p.parse_args()
+    configure_runtime()
     import torch
     from transformers import AutoTokenizer, GenerationConfig
-    run = Path(args.run).resolve()
+    run = artifact_path(args.run)
     metadata = read_json(run / "run.json")
     settings = read_json(args.config)
     if set(settings) != {"seed", "do_sample", "temperature", "top_p", "top_k", "max_new_tokens", "repetition_penalty"}:
@@ -47,7 +48,7 @@ def main():
             raise ValueError("limit-per-task must be positive")
         panel = [r for task in sorted({r["task"] for r in panel})
                  for r in [x for x in panel if x["task"] == task][:args.limit_per_task]]
-    base = Path(args.out) if args.out else run / "evaluations" / "generation"
+    base = artifact_path(args.out) if args.out else run / "evaluations" / "generation"
     end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
     eos_id = tokenizer.eos_token_id
     generation_config = GenerationConfig(
