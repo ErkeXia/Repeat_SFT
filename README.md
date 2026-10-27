@@ -163,6 +163,16 @@ python train.py --data artifacts/data-s42 --config configs/baseline.json --run r
 
 `configs/baseline.json` 可复制为新配置修改，配置与代码会完整存档。`--seed` 只改变训练 seed，数据抽样由准备阶段决定。正式组不会继承烟雾模型或其他组的权重。
 
+新版训练默认显示文本进度条，包括完成百分比、全局更新数、当前轮次、当前轮已用时间和预计剩余时间（ETA 是估算，会受样本长度和检查点保存影响）。交互终端动态刷新；重定向到文件时，约每 30 秒及每轮结束／正常暂停输出一行进度，原有逐步 loss 输出继续保留。无需增加依赖或更改启动参数。
+
+计时结果保存在运行目录：
+
+- `epoch_times.json`：每轮 `active_seconds`（秒）和 `active_hms`（时分秒），以及 `epoch_complete`、`timing_complete`。每轮完成、正常暂停和恢复初始化时更新。
+- `timing/<attempt>.jsonl`：每次启动的逐步原始计时，保留中断前已写入的记录。
+- `progress.json`：原有进度字段保持不变，新增 `timing`，记录实时耗时和预计剩余秒数。
+
+每轮耗时统计训练循环的墙钟时间，包含更新、日志和检查点保存，不包含模型加载及中断后的停机时间。恢复时接续有效步骤的计时；被回滚步骤的耗时不重复计入汇总，但仍保留在原始计时文件中。若在检查点发布之后、对应计时写入之前断电，缺少的计时会标为 `timing_complete=false`，不会伪造完整耗时。新增观测不写入优化器或恢复状态。
+
 保存第 **0、1、2、4、8、16、32、64** 轮完整权重；第 0 轮直接保存未更新的 Base，附带尚未更新的恢复状态。所有关键节点永久保留。每 400 步保存完整恢复点，默认保留最近两个滚动恢复点；如果该步已经是关键节点，则直接使用关键节点恢复状态，避免重复保存。
 
 ```bash
@@ -176,6 +186,8 @@ python train.py --run runs/random-s42 --resume
 `--stop-after` 是绝对更新数，必须大于恢复位置。对运行进程发送 SIGTERM/SIGINT 会在当前更新完成后保存；SIGKILL 或断电只能恢复至最后完整检查点。恢复记录模型、优化器、scheduler、Python/NumPy/CPU/CUDA RNG、轮号、轮内位置和该轮排列。写入临时目录并同步后才原子发布；`.partial-*` 不会被当作完整恢复点。
 
 每次启动是独立 attempt，日志中保留发生中断前尚未提交的更新；`export_curves.py` 根据恢复位置产生无重复的有效时间线，原始日志不会被覆盖。若工程代码后来改变，请用 `run/attempts/<最初 attempt>/code/` 的快照恢复，运行目录传绝对路径；这样代码一致性检查可以通过。不要为了恢复而删除校验。
+
+计时／进度条更新也会改变代码指纹，所以应在正式基线首次启动前更新代码。已用旧代码启动的运行仍按上述方法使用原快照续训，原快照不会自动获得新版计时功能。通常的正常暂停（SIGINT/SIGTERM）会保存当前更新后的恢复点；断电或 SIGKILL 从最近完整恢复点继续，默认可能重放最近一轮中尚未保存的更新。恢复命令不用重新传 `--data`、`--seed` 或 `--subset`。
 
 ## 5. 训练结束后串行评测
 
@@ -248,6 +260,7 @@ run/
   tokenizer/                      # 冻结 tokenizer 和原始模板
   attempts/<id>/                  # 每次启动的代码快照、环境、GPU 信息
   attempts.jsonl, logs/*.jsonl     # 恢复谱系及每次更新的原始事件
+  timing/*.jsonl, epoch_times.json # 原始逐步计时与有效训练路径的每轮耗时
   checkpoints/epoch-000,...,064/   # 完整关键权重及 training_state.pt
   recovery/step-*/                # 最近两个完整恢复点
   evaluations/teacher_forcing/    # 逐样本和逐 token 拟合指标

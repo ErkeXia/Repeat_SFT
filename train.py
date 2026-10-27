@@ -15,6 +15,7 @@ from recipe.checkpoints import latest_recovery, prune_recovery, save_checkpoint
 from recipe.encoding import encode_example, inspect_example, pad_batch
 from recipe.modeling import load_model, training_loss
 from recipe.paths import artifact_path, configure_runtime
+from recipe.progress import TrainingProgress
 
 
 def main():
@@ -165,48 +166,51 @@ def main():
                                {"epoch_index": step // size, "position": step % size,
                                 "order": epoch_order(size, config["seed"], step // size)})
 
-    while step < total:
-        epoch, position = divmod(step, size)
-        index = epoch_order(size, config["seed"], epoch)[position]
-        row, example = train_rows[index], encoded[index]
-        batch = {k: v.to("cuda") for k, v in pad_batch([example], tokenizer.pad_token_id).items()}
-        optimizer.zero_grad(set_to_none=True)
-        lr = optimizer.param_groups[0]["lr"]
-        expected_lr = lr_for_update(step + 1, config["learning_rate"], config["warmup_steps"])
-        if abs(lr - expected_lr) > 1e-14:
-            raise ValueError(f"Scheduler mismatch: {lr} != {expected_lr}")
-        loss = training_loss(model, batch, config["logit_chunk_size"])
-        if not bool(torch.isfinite(loss)):
-            raise FloatingPointError(f"Nonfinite loss before update {step + 1}")
-        loss.backward()
-        grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), config["max_grad_norm"], error_if_nonfinite=True)
-        optimizer.step()
-        scheduler.step()
-        step += 1
-        record = {"step": step, "epoch": epoch + 1, "epoch_fraction": step / size,
-                  "position_in_epoch": position, "sample_id": row["sample_id"], "question_id": row["question_id"],
-                  "loss": loss.item(), "learning_rate": lr, "grad_norm_before_clip": grad_norm.item(),
-                  "n_tokens": len(example["input_ids"]), "n_supervised": example["supervised_tokens"],
-                  "attempt": attempt, "timestamp": now()}
-        append_jsonl(log, record)
-        print(f"step={step}/{total} epoch={step / size:.4f} loss={record['loss']:.6f} lr={lr:.3g}", flush=True)
-        del loss, batch
-        # Deliberate hard process exit lets smoke_test verify replay from a previous
-        # checkpoint, including already-logged but uncommitted updates.
-        if args.simulate_crash_at == step:
-            os._exit(86)
-        if step % size == 0 and step // size in config["checkpoint_epochs"]:
-            save_progress(run / "checkpoints" / f"epoch-{step // size:03d}")
-        pause = stop_requested or (args.stop_after is not None and step >= args.stop_after)
-        if (step % config["recovery_every_steps"] == 0 or pause) and not (
-            step % size == 0 and step // size in config["checkpoint_epochs"]
-        ):
-            save_progress(run / "recovery" / f"step-{step:08d}")
-            prune_recovery(run, config["keep_recovery"])
-        write_json(run / "progress.json", {"step": step, "total_steps": total, "epoch": step / size,
-                                            "status": "complete" if step == total else "paused" if pause else "running"})
-        if pause:
-            break
+    with TrainingProgress(run, attempt, size, total, step) as progress:
+        while step < total:
+            epoch, position = divmod(step, size)
+            index = epoch_order(size, config["seed"], epoch)[position]
+            row, example = train_rows[index], encoded[index]
+            batch = {k: v.to("cuda") for k, v in pad_batch([example], tokenizer.pad_token_id).items()}
+            optimizer.zero_grad(set_to_none=True)
+            lr = optimizer.param_groups[0]["lr"]
+            expected_lr = lr_for_update(step + 1, config["learning_rate"], config["warmup_steps"])
+            if abs(lr - expected_lr) > 1e-14:
+                raise ValueError(f"Scheduler mismatch: {lr} != {expected_lr}")
+            loss = training_loss(model, batch, config["logit_chunk_size"])
+            if not bool(torch.isfinite(loss)):
+                raise FloatingPointError(f"Nonfinite loss before update {step + 1}")
+            loss.backward()
+            grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), config["max_grad_norm"], error_if_nonfinite=True)
+            optimizer.step()
+            scheduler.step()
+            step += 1
+            record = {"step": step, "epoch": epoch + 1, "epoch_fraction": step / size,
+                      "position_in_epoch": position, "sample_id": row["sample_id"], "question_id": row["question_id"],
+                      "loss": loss.item(), "learning_rate": lr, "grad_norm_before_clip": grad_norm.item(),
+                      "n_tokens": len(example["input_ids"]), "n_supervised": example["supervised_tokens"],
+                      "attempt": attempt, "timestamp": now()}
+            append_jsonl(log, record)
+            progress.write(f"step={step}/{total} epoch={step / size:.4f} loss={record['loss']:.6f} lr={lr:.3g}")
+            del loss, batch
+            # Deliberate hard process exit lets smoke_test verify replay from a previous
+            # checkpoint, including already-logged but uncommitted updates.
+            if args.simulate_crash_at == step:
+                os._exit(86)
+            if step % size == 0 and step // size in config["checkpoint_epochs"]:
+                save_progress(run / "checkpoints" / f"epoch-{step // size:03d}")
+            pause = stop_requested or (args.stop_after is not None and step >= args.stop_after)
+            if (step % config["recovery_every_steps"] == 0 or pause) and not (
+                step % size == 0 and step // size in config["checkpoint_epochs"]
+            ):
+                save_progress(run / "recovery" / f"step-{step:08d}")
+                prune_recovery(run, config["keep_recovery"])
+            timing = progress.update(step, paused=pause)
+            write_json(run / "progress.json", {"step": step, "total_steps": total, "epoch": step / size,
+                                                "status": "complete" if step == total else "paused" if pause else "running",
+                                                "timing": timing})
+            if pause:
+                break
 
 
 if __name__ == "__main__":

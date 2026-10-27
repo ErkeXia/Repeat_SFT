@@ -1,11 +1,11 @@
 {
-  "checked_at_utc": "2026-10-27T10:43:38.394534+00:00",
+  "checked_at_utc": "2026-10-27T15:37:01.288141+00:00",
   "project_directory": "D:\\data_recipe_research",
-  "code_sha256": "586d498260f0620a04dfcea4add67206efe0a34510f5151654d96f8f7f25b0b5",
+  "code_sha256": "e253360af0a05b4e21d9457c88d2a313267ab5d9f9bea0afdab5241607587f86",
   "offline_unit_tests": {
     "command": "python -B -m unittest discover -s tests -v",
-    "total": 38,
-    "passed": 37,
+    "total": 45,
+    "passed": 44,
     "failed": 0,
     "skipped": [
       [
@@ -14,7 +14,7 @@
       ]
     ]
   },
-  "python_syntax_files_checked": 22,
+  "python_syntax_files_checked": 24,
   "cli_help_entrypoints_checked": 9,
   "local_torch": "2.6.0+cpu",
   "cuda_available": false,
@@ -26,6 +26,10 @@
     "A real subprocess verified that the frozen source preserves its training fingerprint.",
     "All nine CLI help entrypoints and all Python source files were checked offline.",
     "Linux mount guard is skipped on Windows; real Qwen3 BF16/AdamW8bit resume and generation require validation on the VM.",
-    "No VM files, Git commits or remote repository state were changed."
-  ]
+    "No VM files, Git commits or remote repository state were changed.",
+    "Seven added progress tests passed: epoch durations/ETA, mid-epoch resume, rollback, missing timing data, redirected/TTY display and RNG invariance.",
+    "Removing only the progress import, context, output wrapper and timing fields reproduces the previous training AST exactly.",
+    "Training configuration, loss, optimizer, checkpoint policy and evaluation code were not changed by the progress update."
+  ],
+  "training_logic_ast_unchanged_except_telemetry": true
 }
