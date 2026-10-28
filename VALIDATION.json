@@ -1,11 +1,11 @@
 {
-  "checked_at_utc": "2026-10-27T15:37:01.288141+00:00",
+  "checked_at_utc": "2026-10-28T09:05:50.016515+00:00",
   "project_directory": "D:\\data_recipe_research",
-  "code_sha256": "e253360af0a05b4e21d9457c88d2a313267ab5d9f9bea0afdab5241607587f86",
+  "code_sha256": "9c034ff6178f3b473827f71ccb7b8f9afbd7dd9f9cedb30b435ecb1568f5507b",
   "offline_unit_tests": {
     "command": "python -B -m unittest discover -s tests -v",
-    "total": 45,
-    "passed": 44,
+    "total": 64,
+    "passed": 63,
     "failed": 0,
     "skipped": [
       [
@@ -14,8 +14,8 @@
       ]
     ]
   },
-  "python_syntax_files_checked": 24,
-  "cli_help_entrypoints_checked": 9,
+  "python_syntax_files_checked": 29,
+  "cli_help_entrypoints_checked": 11,
   "local_torch": "2.6.0+cpu",
   "cuda_available": false,
   "pretrained_weights_downloaded": false,
@@ -24,12 +24,21 @@
     "CPU tests use synthetic tokenization, tiny random networks and temporary files inside the workspace.",
     "Legacy disk-full smoke recovery and interrupted control stages were simulated with subprocess mocks; no real model was loaded.",
     "A real subprocess verified that the frozen source preserves its training fingerprint.",
-    "All nine CLI help entrypoints and all Python source files were checked offline.",
     "Linux mount guard is skipped on Windows; real Qwen3 BF16/AdamW8bit resume and generation require validation on the VM.",
     "No VM files, Git commits or remote repository state were changed.",
     "Seven added progress tests passed: epoch durations/ETA, mid-epoch resume, rollback, missing timing data, redirected/TTY display and RNG invariance.",
     "Removing only the progress import, context, output wrapper and timing fields reproduces the previous training AST exactly.",
-    "Training configuration, loss, optimizer, checkpoint policy and evaluation code were not changed by the progress update."
+    "Training configuration, loss, optimizer, checkpoint policy and evaluation code were not changed by the progress update.",
+    "Seven benchmark tests passed: fixed four-case matrix, identical 400-example ordering, timing warmup/token accounting, kernel evidence, tiny-model batch 1/4 updates against full-logit gradients, frozen input verification, failure isolation and interruption/retry preservation.",
+    "The benchmark uses independent sequential workers and frozen source snapshots; formal train.py, recipe modules, configs and dependency requirements are unchanged.",
+    "No real GPU speed, memory or Flash Attention compatibility claim is made; the benchmark must be run on the VM.",
+    "All eleven CLI help entrypoints and 29 Python source files were checked offline after adding checkpoint analysis.",
+    "Twelve analysis tests passed: total-tail saturation and missingness, first/baseline/sustained correctness and regressions, paired behavior groups, end-to-end weighted metrics and portable evidence links, read-only inputs, missing checkpoints, grading failures, legacy embedded responses, identity/hash/data validation, and a subprocess forbidding torch/transformers/datasets/numpy imports.",
+    "Analysis fixtures use five checkpoints, two train samples, one holdout sample and three evaluation questions; no real experiment results are claimed.",
+    "Existing train.py, generation, grading, teacher-forcing evaluation, optimizer/recovery modules, configs and requirements were verified unchanged by the analysis addition.",
+    "Analysis output includes CSV/JSON summaries, linked question and change reports, complete saved responses/token IDs, original reference texts, copied token NPZs and tokenizer metadata."
   ],
-  "training_logic_ast_unchanged_except_telemetry": true
+  "training_logic_ast_unchanged_except_telemetry": true,
+  "benchmark_training_files_unchanged": true,
+  "analysis_existing_training_and_evaluation_files_unchanged": true
 }

@@ -10,12 +10,14 @@
 | --- | --- |
 | `prepare_data.py` | 固定 Hub commit、处理真实模板、验证解答、过滤长度、去重、划分数据、固定评测面板 |
 | `train.py` | 全参数 BF16、AdamW8bit、逐样本更新、关键权重和完整恢复点 |
+| `benchmark_train.py` | 固定 400 条一轮，串行比较 batch 1 / 4 × SDPA / Flash Attention 2；见 [测速说明](BENCHMARK.md) |
 | `evaluate_loss.py` | 逐样本损失、teacher forcing token 准确率、逐 token 明细 |
 | `generate.py` | 在固定下游面板生成；逐题保存原始文字和全部 token ID |
 | `grade.py` | 独立 CPU 判分，允许对已有生成重新判分 |
 | `score_pool.py` / `select_groups.py` | 原始 Base 对候选池打分，生成低／中／高损失匹配组 |
 | `smoke_test.py` | 32 步连续训练与硬中断恢复对照，真实权重保存加载，少量生成判分 |
 | `export_curves.py` | 导出训练日志、评测曲线和早期／后期描述性排名 CSV |
+| `analyze_run.py` | 分析逐样本饱和、逐题首次／持续答对、泛化／迁移及输出行为；保存 CSV 和可检索逐题报告，见 [分析说明](ANALYSIS.md) |
 | `tests/test_offline.py` / `tests/test_storage_resume.py` | 无下载的 CPU 测试、存储路径与旧烟雾测试恢复检查 |
 
 ## 1. 服务器环境
