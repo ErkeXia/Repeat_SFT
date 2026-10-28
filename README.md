@@ -18,6 +18,7 @@
 | `smoke_test.py` | 32 步连续训练与硬中断恢复对照，真实权重保存加载，少量生成判分 |
 | `export_curves.py` | 导出训练日志、评测曲线和早期／后期描述性排名 CSV |
 | `analyze_run.py` | 分析逐样本饱和、逐题首次／持续答对、泛化／迁移及输出行为；保存 CSV 和可检索逐题报告，见 [分析说明](ANALYSIS.md) |
+| `run_analysis.sh` | 用 `nohup` 串行运行损失评测、生成、判分和分析，按检查点记录完成状态并支持继续运行 |
 | `tests/test_offline.py` / `tests/test_storage_resume.py` | 无下载的 CPU 测试、存储路径与旧烟雾测试恢复检查 |
 
 ## 1. 服务器环境

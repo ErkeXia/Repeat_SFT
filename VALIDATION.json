@@ -1,7 +1,7 @@
 {
-  "checked_at_utc": "2026-10-28T09:05:50.016515+00:00",
+  "checked_at_utc": "2026-10-28T13:16:59.446679+00:00",
   "project_directory": "D:\\data_recipe_research",
-  "code_sha256": "9c034ff6178f3b473827f71ccb7b8f9afbd7dd9f9cedb30b435ecb1568f5507b",
+  "code_sha256": "fde514196679a463b9286bcbbeb4e70ed2ec7567b585960d2597a3b5501e22de",
   "offline_unit_tests": {
     "command": "python -B -m unittest discover -s tests -v",
     "total": 64,
@@ -36,9 +36,21 @@
     "Twelve analysis tests passed: total-tail saturation and missingness, first/baseline/sustained correctness and regressions, paired behavior groups, end-to-end weighted metrics and portable evidence links, read-only inputs, missing checkpoints, grading failures, legacy embedded responses, identity/hash/data validation, and a subprocess forbidding torch/transformers/datasets/numpy imports.",
     "Analysis fixtures use five checkpoints, two train samples, one holdout sample and three evaluation questions; no real experiment results are claimed.",
     "Existing train.py, generation, grading, teacher-forcing evaluation, optimizer/recovery modules, configs and requirements were verified unchanged by the analysis addition.",
-    "Analysis output includes CSV/JSON summaries, linked question and change reports, complete saved responses/token IDs, original reference texts, copied token NPZs and tokenizer metadata."
+    "Analysis output includes CSV/JSON summaries, linked question and change reports, complete saved responses/token IDs, original reference texts, copied token NPZs and tokenizer metadata.",
+    "Added a nohup-compatible shell pipeline; existing Python scripts/configs/requirements are unchanged. Targeted shell and embedded-Python checks used synthetic files and mock stages without model downloads."
   ],
   "training_logic_ast_unchanged_except_telemetry": true,
   "benchmark_training_files_unchanged": true,
-  "analysis_existing_training_and_evaluation_files_unchanged": true
+  "analysis_existing_training_and_evaluation_files_unchanged": true,
+  "background_pipeline": {
+    "script": "run_analysis.sh",
+    "sha256": "4b2326eec7a2cec64f6e364f02fdf38f2fb5b27ef71fb2695d378310049be2c7",
+    "bash_syntax_and_help": "passed with Git Bash 5.2.26",
+    "line_endings": "LF; .gitattributes enforces LF on checkout",
+    "mocked_stage_flows": "generation, grading and analysis failures stop execution; restart skips completed checkpoints and preserves failed output directories; completed jobs skip all stages",
+    "embedded_preflight": "actual synthetic run/checkpoint input checks, frozen source reuse, epoch change and source tampering rejection passed",
+    "signal_handling": "SIGTERM forwarded to an active mock child; interrupted stage was not marked complete",
+    "real_gpu_stages_executed": false,
+    "flock": "required on Linux VM; shell mock supplied on Windows because local Git Bash lacks flock"
+  }
 }

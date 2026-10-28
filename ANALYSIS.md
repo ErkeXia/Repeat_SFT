@@ -13,6 +13,56 @@
 
 ## 1. 完成各检查点评测
 
+### 一条命令在后台完成整个流程
+
+新增 `run_analysis.sh` 会依次运行损失评测、MATH500／GPQA 生成、判分和分析。默认使用训练配置中保存的全部检查点；请在训练结束、GPU 可供评测使用时启动。
+
+在 VM 的工程目录拉取代码后执行：
+
+```bash
+cd /home/ubuntu/data_recipe/Repeat_SFT
+git pull
+mountpoint -q /data
+mkdir -p /data/repeat_sft/logs
+
+nohup bash run_analysis.sh runs/random-s42 full-v1 \
+  >> /data/repeat_sft/logs/random-s42-full-v1.log 2>&1 < /dev/null &
+echo "后台 PID：$!"
+```
+
+脚本自动使用工程的 `.venv/bin/python`，无需在 `nohup` 中再次激活环境。若要使用其他 Python，可在启动前设置 `export PYTHON_BIN=/完整路径/python`。输出日志持续追加，查看时执行：
+
+```bash
+tail -f /data/repeat_sft/logs/random-s42-full-v1.log
+```
+
+`tail` 中按 Ctrl+C 只会结束查看日志，后台流程继续运行。全部完成后，结果位于：
+
+```text
+/data/repeat_sft/runs/random-s42/postprocess/full-v1/
+  pipeline.json, launcher.sh, code/   # 本次检查点列表、输入身份及冻结代码
+  teacher_forcing/                    # train／holdout 拟合结果与逐 token NPZ
+  generation/                         # 每题完整回答及 token
+  grades/                             # 判分
+  analysis/report.html                # 可检索的总结与逐题报告
+  state/*.done                        # 完成标记
+```
+
+它使用本次 `postprocess/full-v1` 内的评测目录。若之前已手动完成全部评测，直接使用第 2 节的 `analyze_run.py` 即可，无需重新执行整套 GPU 评测。
+
+中途失败会停止后续步骤。再次执行**相同的 `nohup` 命令**会使用保存的 Python 代码和配置，跳过已经完成的检查点；当前检查点内的已写入记录由原评测脚本继续处理。判分或分析若留下未完成目录，会另建 `grades-retry-*`／`analysis-retry-*`，保留原文件；实际输出路径同时记录在 `grades_path.txt`、`analysis_path.txt` 和日志末尾。若要主动暂停，使用启动时打印的 PID 执行 `kill -TERM PID`，之后可按上述方式继续。
+
+只评测早期节点时用一个独立名称并显式指定列表：
+
+```bash
+nohup bash run_analysis.sh runs/random-s42 early-v1 0,1,2,4 \
+  >> /data/repeat_sft/logs/random-s42-early-v1.log 2>&1 < /dev/null &
+```
+
+同一名称固定检查点列表，修改列表或生成／判分协议时应另选名称。脚本恢复会继续使用最初冻结的代码。若后续只修正判分规则，可对该目录的 `generation/` 单独重新判分和分析，继续复用已有回答。
+
+### 分步骤执行
+
 在 VM 的工程目录、已激活的虚拟环境中执行。所有相对数据和结果路径仍在 `/data/repeat_sft` 下。
 
 ```bash
