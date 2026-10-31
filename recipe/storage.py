@@ -50,7 +50,8 @@ def tensor_storage_bytes(value):
 
 
 def checkpoint_estimate(model, optimizer=None):
-    weights = tensor_storage_bytes(model.state_dict())
+    from .adapters import checkpoint_state_dict
+    weights = tensor_storage_bytes(checkpoint_state_dict(model))
     state = tensor_storage_bytes(optimizer.state_dict()) if optimizer is not None else 0
     return {"weight_bytes": weights, "optimizer_bytes": state,
             "required_bytes": int((weights + state) * 1.05) + 64 * 1024**2,

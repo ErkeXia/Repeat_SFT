@@ -9,6 +9,7 @@ from recipe.common import (append_jsonl, checkpoint_path, environment, file_hash
                            recover_jsonl, seed_everything, snapshot_code, stable_seed, write_json)
 from recipe.evaluation import bind_output
 from recipe.modeling import load_model
+from recipe.grouped import select_panel
 from recipe.paths import artifact_path, configure_runtime
 
 
@@ -26,10 +27,12 @@ def stop_details(ids, eos_id, chat_end_id, limit):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--run", required=True)
-    p.add_argument("--epochs", default="0,1,2,4,8,16,32,64")
+    p.add_argument("--epochs", default="64,32,16,8,4,2,1")
     p.add_argument("--config", default="configs/generation.json")
     p.add_argument("--out", help="Defaults to RUN/evaluations/generation")
     p.add_argument("--limit-per-task", type=int, help="Smoke test only; records a distinct evaluation identity")
+    p.add_argument("--sample-ids", help="JSON list of fixed panel IDs, in generation order")
+    p.add_argument("--progress-label", default="", help="Label printed with per-question progress")
     args = p.parse_args()
     configure_runtime()
     import torch
@@ -43,6 +46,10 @@ def main():
         raise ValueError("max_new_tokens must be positive")
     tokenizer = AutoTokenizer.from_pretrained(run / "tokenizer", local_files_only=True)
     panel = list(iter_jsonl(run / "data" / "panel.jsonl"))
+    if args.sample_ids:
+        if args.limit_per_task is not None:
+            p.error("--sample-ids and --limit-per-task cannot be combined")
+        panel = select_panel(panel, read_json(artifact_path(args.sample_ids)))
     if args.limit_per_task is not None:
         if args.limit_per_task < 1:
             raise ValueError("limit-per-task must be positive")
@@ -55,7 +62,7 @@ def main():
         **{k: v for k, v in settings.items() if k != "seed"},
         eos_token_id=list(dict.fromkeys([end_id, eos_id])), pad_token_id=tokenizer.pad_token_id,
         bos_token_id=tokenizer.bos_token_id, num_beams=1, num_return_sequences=1,
-        use_cache=True, min_new_tokens=0,
+        use_cache=True, min_new_tokens=0, forced_eos_token_id=None,
     )
     prompts = {r["sample_id"]: tokenizer.apply_chat_template(r["messages"], tokenize=True, add_generation_prompt=True)
                for r in panel}
@@ -79,11 +86,13 @@ def main():
             write_json(out / "complete.json", {"samples": len(panel), "responses_sha256": file_hash(log)})
             continue
         seed_everything(settings["seed"])
-        model = load_model(ckpt, attention=metadata["config"]["attention_implementation"])
+        model = load_model(ckpt, attention=metadata["config"]["attention_implementation"],
+                           finetuning=metadata["config"].get("finetuning"),
+                           base_model=metadata["model"] if "finetuning" in metadata["config"] else None)
         model.config.use_cache = True
         context_limit = model.config.max_position_embeddings
         if any(len(v) + settings["max_new_tokens"] > context_limit for v in prompts.values()):
-            raise ValueError(f"Prompt + 30000/new-token budget exceeds model context {context_limit}. "
+            raise ValueError(f"Prompt + {settings['max_new_tokens']}/new-token budget exceeds model context {context_limit}. "
                              "Do not silently truncate: choose a consistent documented configuration for ALL checkpoints.")
         for row in panel:
             if row["sample_id"] in done:
@@ -112,7 +121,8 @@ def main():
                       **stop_details(ids, eos_id, end_id, settings["max_new_tokens"])}
             append_jsonl(log, record)
             done.add(row["sample_id"])
-            print(f"epoch={epoch} {len(done)}/{len(panel)} tokens={len(ids)} stop={record['stop_reason']}", flush=True)
+            label = args.progress_label + " " if args.progress_label else ""
+            print(f"{label}epoch={epoch} {len(done)}/{len(panel)} tokens={len(ids)} stop={record['stop_reason']}", flush=True)
             del output, inputs
         write_json(out / "complete.json", {"samples": len(panel), "responses_sha256": file_hash(log)})
         del model

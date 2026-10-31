@@ -124,7 +124,7 @@ def lr_for_update(step, base_lr, warmup):
 def environment():
     packages = {}
     for name in ("torch", "transformers", "datasets", "huggingface-hub", "bitsandbytes",
-                 "accelerate", "numpy", "safetensors", "math-verify"):
+                 "accelerate", "peft", "numpy", "safetensors", "math-verify"):
         try:
             packages[name] = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:

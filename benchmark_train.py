@@ -18,6 +18,7 @@ from recipe.common import (ROOT, append_jsonl, digest, environment, epoch_order,
                            seed_everything, snapshot_code, validate_prepared, write_json, write_jsonl)
 from recipe.paths import artifact_path, configure_runtime
 from recipe.resume import verified_code
+from recipe.adapters import assert_adapter_training, trainable_parameters, validate_finetuning
 
 CASES = (
     {"name": "b1-sdpa", "batch_size": 1, "attention": "sdpa"},
@@ -42,6 +43,7 @@ def validate_rows(rows):
 
 
 def validate_config(config, warmup_samples):
+    validate_finetuning(config.get("finetuning"))
     if config["expected_train_size"] != TRAIN_SIZE:
         raise ValueError("expected_train_size must be 400")
     if not isinstance(warmup_samples, int) or not 0 <= warmup_samples < TRAIN_SIZE or warmup_samples % 4:
@@ -85,7 +87,8 @@ def prepare_run(args):
                 "data_source": str(data), "config": protocol, "cases": list(CASES), "files": files,
                 "warmup_samples": warmup, "save_weights": bool(args.save_weights),
                 "kernel_probe": args.kernel_probe is not False,
-                "semantics": {"dtype": "bfloat16", "full_parameter": True,
+                "semantics": {"dtype": "bfloat16", "full_parameter": False,
+                              "finetuning": config["finetuning"], "adapter_dtype": "float32",
                               "gradient_checkpointing": True, "gradient_accumulation_steps": 1,
                               "optimizer": "bitsandbytes.AdamW8bit", "padding": "right, no packing or length sorting",
                               "loss": "mean over all assistant target tokens in each batch, including im_end",
@@ -161,7 +164,7 @@ def train_epoch(model, optimizer, scheduler, tokenizer, rows, encoded, order, ca
         if not bool(torch.isfinite(loss)):
             raise FloatingPointError(f"Nonfinite loss at update {step}")
         loss.backward()
-        norm = torch.nn.utils.clip_grad_norm_(model.parameters(), config["max_grad_norm"], error_if_nonfinite=True)
+        norm = torch.nn.utils.clip_grad_norm_(trainable_parameters(model), config["max_grad_norm"], error_if_nonfinite=True)
         optimizer.step()
         scheduler.step()
         sync()
@@ -285,14 +288,16 @@ def worker(out, case_name, attempt):
         torch.cuda.synchronize()
         loading = time.perf_counter()
         model = load_model(manifest["model"]["id"], revision=manifest["model"]["revision"],
-                           attention=case["attention"], training=True)
+                           attention=case["attention"], training=True, finetuning=config["finetuning"],
+                           base_model=manifest["model"])
+        result["adapter_training"] = assert_adapter_training(model)
         torch.cuda.synchronize()
         result["model_load_seconds"] = time.perf_counter() - loading
         actual = model.config._attn_implementation
         if actual != case["attention"]:
             raise RuntimeError(f"Unexpected attention implementation: {actual}")
         result["loaded_attention"] = actual
-        optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=config["learning_rate"],
+        optimizer = bnb.optim.AdamW8bit(trainable_parameters(model), lr=config["learning_rate"],
                                       betas=tuple(config["betas"]), eps=config["adam_epsilon"],
                                       weight_decay=config["weight_decay"])
         scheduler = torch.optim.lr_scheduler.LambdaLR(

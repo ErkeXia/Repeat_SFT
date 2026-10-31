@@ -136,9 +136,10 @@ def main():
     p.add_argument("--data", required=True)
     p.add_argument("--out", required=True)
     p.add_argument("--resume", action="store_true", help="Continue an existing smoke run using its frozen inputs and original code")
-    p.add_argument("--min-free-gib", type=float, default=100, help="Conservative output free-space precheck; default 100 GiB")
+    p.add_argument("--config", help="Fresh run only; defaults to configs/baseline.json (BF16 LoRA)")
+    p.add_argument("--min-free-gib", type=float, default=10, help="Output-space precheck, excluding Base download; default 10 GiB")
     p.add_argument("--generation-max-new-tokens", type=int,
-                   help="Smoke only; formal generation.json remains 30000")
+                   help="Smoke only; default 512, formal generation.json uses 8192")
     args = p.parse_args()
     if not math.isfinite(args.min_free_gib) or args.min_free_gib < 0:
         p.error("--min-free-gib must be finite and nonnegative")
@@ -149,6 +150,8 @@ def main():
     storage = require_free_space(out, args.min_free_gib * GIB)
     print(f"Smoke directory: {out}; free space {storage['free_bytes'] / GIB:.1f} GiB", flush=True)
     if args.resume:
+        if args.config:
+            p.error("--resume uses the frozen smoke config; do not pass --config")
         if not out.is_dir():
             raise FileNotFoundError(f"Smoke output missing: {out}. Migrate the existing output to the volume first.")
         code_root = frozen_smoke(out, data)
@@ -159,11 +162,15 @@ def main():
         print(f"Resuming with original verified source: {code_root}", flush=True)
     else:
         out = fresh_dir(out)
-        rows = sorted(iter_jsonl(data / "train.jsonl"), key=lambda r: (r["n_tokens"], r["sample_id"]))[:8]
-        if len(rows) != 8:
+        ordered = sorted(iter_jsonl(data / "train.jsonl"), key=lambda r: (r["n_tokens"], r["sample_id"]))
+        if len(ordered) < 8:
             raise ValueError("Smoke test requires at least eight prepared train examples")
+        # A short-only smoke can pass while the longest real solution OOMs.
+        rows = ordered[:7] + ordered[-1:]
         write_jsonl(out / "subset.jsonl", rows)
-        config = read_json(ROOT / "configs" / "baseline.json")
+        config = read_json(args.config or ROOT / "configs" / "baseline.json")
+        from recipe.adapters import validate_finetuning
+        validate_finetuning(config.get("finetuning"))
         config.update(epochs=4, expected_train_size=8, checkpoint_epochs=[0, 4], recovery_every_steps=8, keep_recovery=1)
         write_json(out / "smoke_train.json", config)
         generation = read_json(ROOT / "configs" / "generation.json")

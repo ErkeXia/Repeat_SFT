@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# VM: nohup bash run_analysis.sh runs/random-s42 full-v1 > /data/repeat_sft/logs/full-v1.log 2>&1 < /dev/null &
+# VM: nohup bash run_analysis.sh runs/random-lora-s42 full-v1 > /data/repeat_sft/logs/full-v1.log 2>&1 < /dev/null &
 set -Eeuo pipefail
 
 if [[ ${1:-} == --help || ${1:-} == -h ]]; then
     cat <<'HELP'
 Usage: bash run_analysis.sh [RUN] [JOB_NAME] [EPOCHS]
-  RUN       Training run; default runs/random-s42 (relative to REPEAT_SFT_ROOT).
+  RUN       Training run; default runs/random-lora-s42 (relative to REPEAT_SFT_ROOT).
   JOB_NAME  Output/resume name; default full-v1. Reuse it to continue this job.
   EPOCHS    Comma-separated checkpoints; default the run's configured milestones.
 Examples:
-  bash run_analysis.sh runs/random-s42 full-v1
-  bash run_analysis.sh runs/random-s42 early-v1 0,1,2,4
+  bash run_analysis.sh runs/random-lora-s42 full-v1
+  bash run_analysis.sh runs/random-lora-s42 early-v1 0,1,2,4
 Environment: REPEAT_SFT_ROOT (default /data/repeat_sft), PYTHON_BIN (optional).
 Runs loss evaluation -> generation -> grading -> analysis. No training.
 HELP
@@ -32,7 +32,7 @@ export REPEAT_SFT_ROOT=${REPEAT_SFT_ROOT:-/data/repeat_sft}
 export PYTHONUNBUFFERED=1
 export PYTHONDONTWRITEBYTECODE=1
 
-run_arg=${1:-runs/random-s42}
+run_arg=${1:-runs/random-lora-s42}
 job_name=${2:-full-v1}
 epoch_arg=${3:-}
 

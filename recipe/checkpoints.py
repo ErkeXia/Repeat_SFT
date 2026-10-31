@@ -8,7 +8,7 @@ import re
 import shutil
 import uuid
 
-from .common import capture_rng, now, read_json, restore_rng, write_json
+from .common import capture_rng, file_hash, now, read_json, restore_rng, write_json
 from .storage import checkpoint_estimate, require_free_space
 
 
@@ -29,13 +29,23 @@ def save_checkpoint(path, model, tokenizer, step, config_hash, optimizer=None, s
     try:
         temp.mkdir()
         created_temp = True
-        model.save_pretrained(temp, safe_serialization=True, max_shard_size="4GB")
+        spec = getattr(model, "_recipe_model_spec", None)
+        if getattr(model, "peft_config", None):
+            if spec is None:
+                raise ValueError("Cannot save an adapter without pinned Base/config provenance")
+            model.save_pretrained(temp, safe_serialization=True, save_embedding_layers=False)
+            write_json(temp / "recipe_model.json", spec)
+        else:
+            model.save_pretrained(temp, safe_serialization=True, max_shard_size="4GB")
         tokenizer.save_pretrained(temp)
+        model_files = {p.name: file_hash(p) for p in temp.iterdir() if p.is_file()}
         if optimizer is not None:
             torch.save({"step": step, "optimizer": optimizer.state_dict(), "scheduler": scheduler.state_dict(),
                         "rng": rng, "cursor": cursor, "config_sha256": config_hash}, temp / "training_state.pt")
         write_json(temp / "complete.json", {"step": step, "config_sha256": config_hash,
                                            "has_training_state": optimizer is not None,
+                                           "weights_format": "lora_adapter" if spec else "full_model",
+                                           "model_files": model_files,
                                            "storage_estimate": estimate, "timestamp": now()})
         for item in temp.iterdir():
             if item.is_file():

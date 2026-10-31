@@ -16,6 +16,7 @@ from recipe.analysis import (correctness_milestones, fit_milestones, fit_summary
 from recipe.common import (digest, environment, file_hash, fresh_dir, iter_jsonl, now, read_json,
                            snapshot_code, stable_seed, write_json, write_jsonl)
 from recipe.paths import artifact_path
+from recipe.grouped import select_panel
 
 GRADE_FIELDS = {"extracted_answer", "extraction_method", "extractable", "correct", "grading_error", "grader_version"}
 STYLE = """body{font:16px system-ui,sans-serif;max-width:1500px;margin:32px auto;padding:0 24px;color:#202b3c}
@@ -74,6 +75,10 @@ class Analysis:
         self.epochs = sorted(set(int(e) for e in args.epochs.split(","))) if args.epochs else sorted(set(self.metadata["config"]["checkpoint_epochs"]))
         if not self.epochs or any(e < 0 for e in self.epochs):
             raise ValueError("Epochs must be nonnegative")
+        requested_generation = getattr(args, "generation_epochs", None)
+        self.eval_epochs = sorted(set(map(int, requested_generation.split(",")))) if requested_generation else self.epochs
+        if not self.eval_epochs or not set(self.eval_epochs).issubset(self.epochs):
+            raise ValueError("Generation epochs must be a nonempty subset of --epochs")
         self.samples = {}
         for split in ("train", "holdout", "panel"):
             path = self.run / "data" / f"{split}.jsonl"
@@ -85,6 +90,12 @@ class Analysis:
             if not rows or len(set(ids)) != len(rows):
                 raise ValueError(f"Empty/duplicate sample IDs: {path}")
             self.samples[split] = {r["sample_id"]: r for r in rows}
+        if getattr(args, "sample_ids", None):
+            ids_file = artifact_path(args.sample_ids)
+            selected = select_panel(list(self.samples["panel"].values()), self.json(ids_file))
+            self.samples["panel"] = {r["sample_id"]: r for r in selected}
+        if 0 not in self.eval_epochs:
+            self.issues.append("Epoch 0 was not requested for generation; changes vs Base and transfer onset relative to Base are unavailable.")
         self.out = fresh_dir(artifact_path(args.out))
         write_json(self.out / "analysis_status.json", {"status": "running", "started_at": now()})
         for split in self.samples:
@@ -197,7 +208,7 @@ class Analysis:
             sources[epoch] = source
         signatures = set()
         panel = self.samples["panel"]
-        for epoch in self.epochs:
+        for epoch in self.eval_epochs:
             if epoch not in sources:
                 self.absent(f"No graded responses for epoch {epoch}")
                 continue
@@ -338,17 +349,17 @@ class Analysis:
         tasks = defaultdict(list)
         for sid, question in self.samples["panel"].items():
             tasks[question["task"]].append(sid)
-            observations = [self.eval.get(e, {}).get(sid) for e in self.epochs]
+            observations = [self.eval.get(e, {}).get(sid) for e in self.eval_epochs]
             evidence = Path("evidence") / "questions" / (digest(sid) + ".json")
             report = Path("questions") / (digest(sid) + ".html")
             row = {"sample_id": sid, "question_id": question["question_id"], "task": question["task"],
                    "question": question["question"],
-                   **correctness_milestones(self.epochs, observations, self.args.correct_min_points),
+                   **correctness_milestones(self.eval_epochs, observations, self.args.correct_min_points),
                    "evidence_file": evidence.as_posix(), "report_file": report.as_posix()}
             questions.append(row)
             trajectory = []
             details = []
-            for i, (epoch, observation) in enumerate(zip(self.epochs, observations)):
+            for i, (epoch, observation) in enumerate(zip(self.eval_epochs, observations)):
                 entry = {"epoch": epoch, "sample_id": sid, "task": question["task"], "available": observation is not None,
                          "evidence_file": evidence.as_posix(), "report_file": report.as_posix()}
                 if observation:
@@ -363,7 +374,7 @@ class Analysis:
                 long_rows.append(entry)
                 if i:
                     previous = observations[i - 1]
-                    transitions.append({"task": question["task"], "sample_id": sid, "from_epoch": self.epochs[i - 1],
+                    transitions.append({"task": question["task"], "sample_id": sid, "from_epoch": self.eval_epochs[i - 1],
                         "to_epoch": epoch, "transition": transition(previous, observation),
                         "from_response_file": previous.get("response_file") if previous else None,
                         "to_response_file": observation.get("response_file") if observation else None,
@@ -384,7 +395,7 @@ class Analysis:
             page(self.out / report, f"{question['task']}: {sid}", body)
         for task, ids in tasks.items():
             task_curves = []
-            for epoch in self.epochs:
+            for epoch in self.eval_epochs:
                 rows = [self.eval.get(epoch, {})[sid] for sid in ids if sid in self.eval.get(epoch, {})]
                 complete = len(rows) == len(ids) and all(r["grading_error"] is None and r["correct"] is not None for r in rows)
                 stats = summarize_grades(rows) if rows else {}
@@ -399,10 +410,10 @@ class Analysis:
             for c in task_curves:
                 c["accuracy_change_vs_base"] = c["accuracy"] - baseline if c["accuracy"] is not None and baseline is not None else None
             curves.extend(task_curves)
-            task_events.append({"task": task, **task_milestones(self.epochs, task_curves, self.args.correct_min_points)})
-            comparisons = [("adjacent", a, b) for a, b in zip(self.epochs, self.epochs[1:])]
-            if 0 in self.epochs:
-                comparisons += [("vs_base", 0, e) for e in self.epochs if e != 0]
+            task_events.append({"task": task, **task_milestones(self.eval_epochs, task_curves, self.args.correct_min_points)})
+            comparisons = [("adjacent", a, b) for a, b in zip(self.eval_epochs, self.eval_epochs[1:])]
+            if 0 in self.eval_epochs:
+                comparisons += [("vs_base", 0, e) for e in self.eval_epochs if e != 0]
             for kind, a, b in comparisons:
                 pair = {"task": task, "comparison": kind, "from_epoch": a, "to_epoch": b,
                         **paired_changes(ids, self.eval.get(a, {}), self.eval.get(b, {}))}
@@ -432,7 +443,7 @@ class Analysis:
         return curves, questions, task_events, pairs
 
     def report(self, fit_curves, fit_samples, overall, curves, questions, task_events, pairs):
-        body = f'<p>检查点：{escaped(self.epochs)}。损失/准确率稳定是可调阈值的描述性判断；只覆盖已评测检查点，不能证明永久饱和。</p>'
+        body = f'<p>拟合检查点：{escaped(self.epochs)}；自由生成检查点：{escaped(self.eval_epochs)}。损失/准确率稳定是可调阈值的描述性判断；只覆盖已评测检查点，不能证明永久饱和。</p>'
         body += '<p>首次答对是首次观察到答对；单次采样、稀疏检查点不能精确定位能力出现的训练轮次。正常结束和正确率的共同变化不构成因果分解。</p>'
         if self.issues:
             body += '<h2>覆盖与证据提示</h2><ul>' + ''.join(f'<li>{escaped(x)}</li>' for x in self.issues) + '</ul>'
@@ -466,7 +477,7 @@ class Analysis:
             ("last_token_accuracy", "最终 Token 准确率")], link=("question", "report_file")) + '</div>'
         body += "<script>function filterRows(){const q=document.getElementById('search').value.toLowerCase();document.querySelectorAll('#question-tables tbody tr').forEach(r=>{r.hidden=!r.textContent.toLowerCase().includes(q);});}</script>"
         page(self.out / "report.html", "重复 SFT 检查点分析", body)
-        write_json(self.out / "summary.json", {"epochs": self.epochs, "fit_curves": fit_curves,
+        write_json(self.out / "summary.json", {"epochs": self.epochs, "generation_epochs": self.eval_epochs, "fit_curves": fit_curves,
                    "fit_summary_milestones": overall, "downstream_curves": curves, "task_milestones": task_events,
                    "issues": self.issues, "question_details": "question_milestones.csv",
                    "sample_saturation": "fit_saturation.csv", "paired_behavior_changes": "paired_changes.csv"})
@@ -480,7 +491,7 @@ class Analysis:
             self.report(fit_curves, fit_samples, overall, curves, questions, events, pairs)
             code = snapshot_code(self.out / "code")
             write_json(self.out / "analysis_manifest.json", {"created_at": now(), "code_sha256": code,
-                "arguments": vars(self.args), "epochs": self.epochs, "inputs_sha256": self.inputs,
+                "arguments": vars(self.args), "epochs": self.epochs, "generation_epochs": self.eval_epochs, "inputs_sha256": self.inputs,
                 "environment": environment(), "issues": self.issues,
                 "methods": {"saturation": "Earliest suffix of requested checkpoints with no missing values, at least min_points observations, and total max-min range <= tolerance. This is retrospective and not necessarily low loss/high accuracy.",
                     "saturation_thresholds": self.fit_options(), "correct_min_points": self.args.correct_min_points,
@@ -502,6 +513,8 @@ def main():
     p.add_argument("--teacher-forcing", help="Teacher-forcing root; default RUN/evaluations/teacher_forcing")
     p.add_argument("--out", required=True, help="NEW output directory; contains self-contained report and evidence")
     p.add_argument("--epochs", help="Comma-separated epochs; default all configured milestone epochs")
+    p.add_argument("--generation-epochs", help="Optional subset of --epochs for generation; fitting still uses all --epochs")
+    p.add_argument("--sample-ids", help="JSON list of panel IDs for a complete subgroup report")
     p.add_argument("--allow-partial", action="store_true", help="Keep missing results explicitly unknown; default requires complete evaluation")
     p.add_argument("--loss-tolerance", type=float, default=.01, help="Maximum suffix NLL range (nats per token)")
     p.add_argument("--accuracy-tolerance", type=float, default=.005, help="Maximum suffix token-accuracy range (0.005 = 0.5 percentage points)")

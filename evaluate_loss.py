@@ -14,7 +14,7 @@ def main():
     p.add_argument("--run", required=True)
     p.add_argument("--epochs", default="0,1,2,4,8,16,32,64")
     p.add_argument("--out", help="Defaults to RUN/evaluations/teacher_forcing")
-    p.add_argument("--chunk-size", type=int, default=128)
+    p.add_argument("--chunk-size", type=int, help="Defaults to the run's logit_chunk_size")
     p.add_argument("--limit-per-split", type=int, help="Smoke only; formal evaluation uses every example")
     args = p.parse_args()
     configure_runtime()
@@ -22,6 +22,8 @@ def main():
     from transformers import AutoTokenizer
     run = artifact_path(args.run)
     metadata = read_json(run / "run.json")
+    if args.chunk_size is None:
+        args.chunk_size = metadata["config"].get("logit_chunk_size", 128)
     tokenizer = AutoTokenizer.from_pretrained(run / "tokenizer", local_files_only=True)
     base = artifact_path(args.out) if args.out else run / "evaluations" / "teacher_forcing"
     seed_everything(metadata["config"]["seed"])
@@ -40,7 +42,9 @@ def main():
         if not (out / "code").exists():
             snapshot_code(out / "code")
             write_json(out / "environment.json", environment())
-        model = load_model(ckpt, attention=metadata["config"]["attention_implementation"])
+        model = load_model(ckpt, attention=metadata["config"]["attention_implementation"],
+                           finetuning=metadata["config"].get("finetuning"),
+                           base_model=metadata["model"] if "finetuning" in metadata["config"] else None)
         for split in ("train", "holdout"):
             evaluate_rows(model, tokenizer, rows_by_split[split],
                           out / split, metadata["max_length"], args.chunk_size)

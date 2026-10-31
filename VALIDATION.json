@@ -1,56 +1,93 @@
 {
-  "checked_at_utc": "2026-10-28T13:16:59.446679+00:00",
+  "checked_at_utc": "2026-10-30T12:54:36.160216+00:00",
   "project_directory": "D:\\data_recipe_research",
-  "code_sha256": "fde514196679a463b9286bcbbeb4e70ed2ec7567b585960d2597a3b5501e22de",
+  "code_sha256": "33140289e923f0bf474ac707f08289967921db0f073151b08d4889c1423f0b99",
   "offline_unit_tests": {
     "command": "python -B -m unittest discover -s tests -v",
-    "total": 64,
-    "passed": 63,
+    "total": 82,
+    "passed": 81,
     "failed": 0,
     "skipped": [
       [
         "test_missing_data_mount_is_rejected_without_writes (test_storage_resume.PathTests.test_missing_data_mount_is_rejected_without_writes)",
         "Linux mount guard; Windows does not have /data mounts"
       ]
-    ]
+    ],
+    "log": ".test_tmp/a6000-tests.log",
+    "dependency_path": ".test_tmp/lora-deps"
   },
-  "python_syntax_files_checked": 29,
-  "cli_help_entrypoints_checked": 11,
+  "python_syntax_files_checked": 34,
+  "cli_help_entrypoints_checked": 12,
+  "bash_scripts_checked": 2,
+  "documentation_bash_blocks_checked": 34,
+  "utf8_documentation_and_local_links": "passed",
+  "git_diff_check": "passed",
   "local_torch": "2.6.0+cpu",
+  "transformers": "4.57.1",
+  "peft": "0.18.0",
   "cuda_available": false,
   "pretrained_weights_downloaded": false,
   "full_dataset_downloaded": false,
+  "finetuning": {
+    "default": "BF16 frozen Base + LoRA; configs/baseline.json (same as lora_bf16.json)",
+    "alternative": "QLoRA: frozen NF4 double-quantized Base, BF16 compute; configs/qlora_nf4.json",
+    "rank": 16,
+    "alpha": 32,
+    "dropout": 0.0,
+    "tests": [
+      "Only adapter A/B weights update; Base/embedding/head remain frozen",
+      "Real tiny Qwen3 + PEFT chunked loss and adapter gradients match full logits; mask and EOS included",
+      "Zero initialized adapter is identical to Base before training",
+      "Actual BF16 tiny Base with FP32 adapter backward and teacher-forcing",
+      "Adapter-only checkpoint save/reload and exact optimizer/scheduler/RNG continuation on CPU",
+      "Adapter inference loader and generation with real PEFT on a tiny random model",
+      "Pinned Base/config and weight integrity validation; disk estimate counts adapter only",
+      "NF4 loader arguments and frozen dtype preparation (mocked quantization, not a real NF4 kernel)"
+    ],
+    "real_cuda_nf4_training_validated": false,
+    "real_gpu_memory_or_speed_measured": false,
+    "vm_smoke_required": "Seven shortest + longest train sample, 32 updates per trajectory, forced crash at 13 and restore at 8",
+    "target_gpu": "NVIDIA RTX A6000 48 GB",
+    "real_cuda_bf16_training_validated": false
+  },
+  "evaluation_protocol": {
+    "fit_epochs": [
+      0,
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      64
+    ],
+    "generation_epochs": [
+      64,
+      32,
+      16,
+      8,
+      4,
+      2,
+      1
+    ],
+    "max_new_tokens": 8192,
+    "groups": 4,
+    "math500_per_group": 32,
+    "gpqa_per_group": 16,
+    "preserves_fitting_evidence": true,
+    "no_base_generation_in_grouped_default": true
+  },
+  "launchers": {
+    "run_analysis.sh": "4e1198694f60e3f863eda2841450ef5fb5c9275c53a6b183384eca99b14a72fa",
+    "run_grouped_analysis.sh": "6a2f0648819690258168e2d41fa8030d27b4cab4b167be986a75b7ed0a5dbc99"
+  },
   "notes": [
-    "CPU tests use synthetic tokenization, tiny random networks and temporary files inside the workspace.",
-    "Legacy disk-full smoke recovery and interrupted control stages were simulated with subprocess mocks; no real model was loaded.",
-    "A real subprocess verified that the frozen source preserves its training fingerprint.",
-    "Linux mount guard is skipped on Windows; real Qwen3 BF16/AdamW8bit resume and generation require validation on the VM.",
-    "No VM files, Git commits or remote repository state were changed.",
-    "Seven added progress tests passed: epoch durations/ETA, mid-epoch resume, rollback, missing timing data, redirected/TTY display and RNG invariance.",
-    "Removing only the progress import, context, output wrapper and timing fields reproduces the previous training AST exactly.",
-    "Training configuration, loss, optimizer, checkpoint policy and evaluation code were not changed by the progress update.",
-    "Seven benchmark tests passed: fixed four-case matrix, identical 400-example ordering, timing warmup/token accounting, kernel evidence, tiny-model batch 1/4 updates against full-logit gradients, frozen input verification, failure isolation and interruption/retry preservation.",
-    "The benchmark uses independent sequential workers and frozen source snapshots; formal train.py, recipe modules, configs and dependency requirements are unchanged.",
-    "No real GPU speed, memory or Flash Attention compatibility claim is made; the benchmark must be run on the VM.",
-    "All eleven CLI help entrypoints and 29 Python source files were checked offline after adding checkpoint analysis.",
-    "Twelve analysis tests passed: total-tail saturation and missingness, first/baseline/sustained correctness and regressions, paired behavior groups, end-to-end weighted metrics and portable evidence links, read-only inputs, missing checkpoints, grading failures, legacy embedded responses, identity/hash/data validation, and a subprocess forbidding torch/transformers/datasets/numpy imports.",
-    "Analysis fixtures use five checkpoints, two train samples, one holdout sample and three evaluation questions; no real experiment results are claimed.",
-    "Existing train.py, generation, grading, teacher-forcing evaluation, optimizer/recovery modules, configs and requirements were verified unchanged by the analysis addition.",
-    "Analysis output includes CSV/JSON summaries, linked question and change reports, complete saved responses/token IDs, original reference texts, copied token NPZs and tokenizer metadata.",
-    "Added a nohup-compatible shell pipeline; existing Python scripts/configs/requirements are unchanged. Targeted shell and embedded-Python checks used synthetic files and mock stages without model downloads."
-  ],
-  "training_logic_ast_unchanged_except_telemetry": true,
-  "benchmark_training_files_unchanged": true,
-  "analysis_existing_training_and_evaluation_files_unchanged": true,
-  "background_pipeline": {
-    "script": "run_analysis.sh",
-    "sha256": "4b2326eec7a2cec64f6e364f02fdf38f2fb5b27ef71fb2695d378310049be2c7",
-    "bash_syntax_and_help": "passed with Git Bash 5.2.26",
-    "line_endings": "LF; .gitattributes enforces LF on checkout",
-    "mocked_stage_flows": "generation, grading and analysis failures stop execution; restart skips completed checkpoints and preserves failed output directories; completed jobs skip all stages",
-    "embedded_preflight": "actual synthetic run/checkpoint input checks, frozen source reuse, epoch change and source tampering rejection passed",
-    "signal_handling": "SIGTERM forwarded to an active mock child; interrupted stage was not marked complete",
-    "real_gpu_stages_executed": false,
-    "flock": "required on Linux VM; shell mock supplied on Windows because local Git Bash lacks flock"
-  }
+    "Tests use only synthetic data and tiny randomly initialized Qwen models. Test dependencies installed under ignored .test_tmp only.",
+    "Existing checkpoint/recovery, grading/analysis, grouped-evaluation and four-case benchmark regression tests pass.",
+    "Real GPU BF16 LoRA, optional quantization kernels, bitsandbytes optimizer continuation, long-context VRAM and Linux mount guard still require the VM.",
+    "Default 10240-token data filter and 8192-new-token generation are retained; no silent truncation, example dropping or OOM fallback.",
+    "Old full-parameter runs and fitting artifacts are not converted or modified; new LoRA runs must use fresh directories.",
+    "No VM files, Git commits, pushes or remote repository state were changed.",
+    "Hardware corrected to RTX A6000; default Base is BF16 without quantization. Existing NF4 runs retain their frozen configuration. Full 82-test suite rerun after correction."
+  ]
 }

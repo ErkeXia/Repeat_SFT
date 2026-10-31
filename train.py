@@ -1,4 +1,4 @@
-"""Single-GPU, full-parameter BF16 SFT: one example and one update per step."""
+"""Single-GPU LoRA/QLoRA SFT: one example and one adapter update per step."""
 from __future__ import annotations
 
 import argparse
@@ -16,6 +16,7 @@ from recipe.encoding import encode_example, inspect_example, pad_batch
 from recipe.modeling import load_model, training_loss
 from recipe.paths import artifact_path, configure_runtime
 from recipe.progress import TrainingProgress
+from recipe.adapters import assert_adapter_training, trainable_parameters, validate_finetuning
 
 
 def main():
@@ -44,6 +45,7 @@ def main():
             p.error("Resume uses frozen run data/config; do not pass --seed, --subset or --data")
         metadata = read_json(run / "run.json")
         config = metadata["config"]
+        validate_finetuning(config.get("finetuning"))
         for name, expected in metadata["data_files"].items():
             if file_hash(run / "data" / name) != expected:
                 raise ValueError(f"Run input modified: {name}")
@@ -61,6 +63,14 @@ def main():
             args.subset = artifact_path(args.subset)
         manifest = validate_prepared(prepared)
         config = read_json(args.config)
+        validate_finetuning(config.get("finetuning"))
+        if args.subset and (Path(args.subset).parent / "selection.json").exists():
+            selection = read_json(Path(args.subset).parent / "selection.json")
+            scored = selection["score_identity"]
+            if (scored.get("finetuning") != config["finetuning"]
+                    or scored.get("attention_implementation") != config["attention_implementation"]):
+                raise ValueError("Subset initial-loss scores used a different Base precision/LoRA protocol. "
+                                 "Re-run score_pool.py with this training --config, then select_groups.py.")
         if args.seed is not None:
             config["seed"] = args.seed
         if config["epochs"] < 1 or config["recovery_every_steps"] < 1 or config["keep_recovery"] < 1:
@@ -81,7 +91,9 @@ def main():
                     "max_length": manifest["arguments"]["max_length"],
                     "subset_source": str(Path(args.subset).resolve()) if args.subset else str(prepared / "train.jsonl"),
                     "semantics": {"batch_size": 1, "gradient_accumulation_steps": 1, "dtype": "bfloat16",
-                                  "full_parameter": True, "optimizer": "bitsandbytes.AdamW8bit",
+                                  "full_parameter": False, "finetuning": config["finetuning"],
+                                  "adapter_dtype": "float32", "optimizer": "bitsandbytes.AdamW8bit",
+                                  "checkpoint_weights": "adapter_only; pinned Base required",
                                   "loss": "mean over assistant next-token targets including im_end"}}
         source, model_revision = metadata["model"]["id"], metadata["model"]["revision"]
 
@@ -116,8 +128,13 @@ def main():
         write_json(run / "run.json", metadata)
     write_json(run / "attempts" / attempt / "environment.json", environment())
     seed_everything(config["seed"], config["deterministic"])
-    model = load_model(source, revision=model_revision, attention=config["attention_implementation"], training=True)
-    optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=config["learning_rate"],
+    model = load_model(source, revision=model_revision, attention=config["attention_implementation"], training=True,
+                       finetuning=config["finetuning"], base_model=metadata["model"])
+    adapter_info = assert_adapter_training(model)
+    parameters = trainable_parameters(model)
+    print(f"LoRA trainable parameters: {adapter_info['trainable_parameters']:,}; "
+          f"Base quantization: {config['finetuning']['base_quantization']}", flush=True)
+    optimizer = bnb.optim.AdamW8bit(parameters, lr=config["learning_rate"],
                                   betas=tuple(config["betas"]), eps=config["adam_epsilon"],
                                   weight_decay=config["weight_decay"])
     scheduler = torch.optim.lr_scheduler.LambdaLR(
@@ -159,7 +176,8 @@ def main():
     write_json(run / "attempts" / attempt / "hardware.json", {
         "gpu": torch.cuda.get_device_name(0), "cuda": torch.version.cuda,
         "bf16_parameters": sum(p.numel() for p in model.parameters() if p.dtype == torch.bfloat16),
-        "trainable_parameters": sum(p.numel() for p in model.parameters() if p.requires_grad)})
+        **adapter_info, "base_quantization": config["finetuning"]["base_quantization"],
+        "total_memory_gib": torch.cuda.get_device_properties(0).total_memory / 1024**3})
 
     def save_progress(path):
         return save_checkpoint(path, model, tokenizer, step, identity, optimizer, scheduler,
@@ -181,7 +199,7 @@ def main():
             if not bool(torch.isfinite(loss)):
                 raise FloatingPointError(f"Nonfinite loss before update {step + 1}")
             loss.backward()
-            grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), config["max_grad_norm"], error_if_nonfinite=True)
+            grad_norm = torch.nn.utils.clip_grad_norm_(parameters, config["max_grad_norm"], error_if_nonfinite=True)
             optimizer.step()
             scheduler.step()
             step += 1

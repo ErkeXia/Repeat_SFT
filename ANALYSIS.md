@@ -1,5 +1,9 @@
 # 训练曲线与逐题分析
 
+当前训练已切换为 LoRA，默认 BF16 Base、不量化，QLoRA 为可选配置；评测根据 run 中冻结的精度和 Base commit 加载相应 adapter。新 run 的完整执行步骤见 [TODO_VM.md](TODO_VM.md)。下文历史示例的 `runs/random-s42` 请替换成新 run（如 `runs/random-lora-s42`）；旧全参结果不能作为新 LoRA run 的拟合证据。
+
+当前后台方案请先看 [GROUPED_EVALUATION.md](GROUPED_EVALUATION.md)：四组各 48 题、每组按 64→1 轮评测、上限 8,192 token，完成一组就保存该组判分和报告。它复用已有 teacher-forcing 结果，并可替换指定任务的旧生成记录。下文的 `run_analysis.sh` 仍是按检查点遍历完整面板的入口。
+
 现有 `evaluate_loss.py`、`generate.py`、`grade.py` 负责计算并保存评测结果；新增 `analyze_run.py` 将这些结果跨检查点关联起来。分析阶段只读已保存的结果，在 CPU 上运行，不下载数据或模型，不加载训练权重。
 
 按照本次实验的约定：

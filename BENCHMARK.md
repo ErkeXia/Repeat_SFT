@@ -11,7 +11,7 @@
 
 四组都重新加载数据准备阶段固定 commit 的 `Qwen/Qwen3-4B-Base`，使用同一份 400 条训练数据、完整文本和同一乱序；每条恰好更新一次。不按长度排序、不 packing、不截断、不跳过长样本。Batch 4 右侧填充到该批最长序列，填充和提示词不参与监督。助手的完整推理、最终答案和结束符继续参与监督。
 
-使用与正式训练相同的全参数 BF16、梯度检查点、AdamW8bit、梯度裁剪和分块 LM-head loss。学习率、100 次更新预热等设置来自 `configs/baseline.json`。Batch 4 的预热覆盖整个 100 步 epoch；它与 batch 1 的训练轨迹不同。Loss 是每批所有助手目标 token 的平均值，因此批内长回答贡献更多 token。这个实验比较速度，不用于断言相同训练效果。
+使用与正式训练相同的 LoRA（默认冻结不量化的 BF16 Base，rank 16 / alpha 32 / dropout 0），梯度检查点、AdamW8bit、梯度裁剪和分块 LM-head loss。仅 adapter 参数参与更新，学习率、100 次更新预热等设置来自 `configs/baseline.json`；可用 `--config configs/qlora_nf4.json` 在独立目录测试 NF4 QLoRA。Batch 4 的预热覆盖整个 100 步 epoch；它与 batch 1 的训练轨迹不同。Loss 是每批所有助手目标 token 的平均值，因此批内长回答贡献更多 token。这个实验比较速度，不用于断言相同训练效果。目标 GPU 为 RTX A6000 48GB，实际 batch 4 显存峰值仍需测试；OOM 会记录失败，不改变 batch 或丢弃长题。
 
 ## 在 VM 上准备依赖
 
@@ -45,11 +45,11 @@ python -c 'import torch, flash_attn; print("torch", torch.__version__, "CUDA", t
 ```bash
 python -u benchmark_train.py \
   --data artifacts/data-s42 \
-  --out runs/benchmark-s42 \
+  --out runs/benchmark-lora-s42 \
   --seed 42
 ```
 
-结果默认写到 `/data/repeat_sft/runs/benchmark-s42`。必须使用新目录；同名目录不会被覆盖。四组在屏幕上分别显示样本进度、更新次数、loss、已用时间和 ETA，完成后打印四行汇总。
+结果默认写到 `/data/repeat_sft/runs/benchmark-lora-s42`。必须使用新目录；同名目录不会被覆盖。四组在屏幕上分别显示样本进度、更新次数、loss、已用时间和 ETA，完成后打印四行汇总。
 
 后台运行：
 
@@ -58,19 +58,19 @@ mkdir -p /data/repeat_sft/logs
 log_file="/data/repeat_sft/logs/benchmark-$(date +%Y%m%d-%H%M%S)-$$.log"
 nohup python -u benchmark_train.py \
   --data artifacts/data-s42 \
-  --out runs/benchmark-s42 \
+  --out runs/benchmark-lora-s42 \
   --seed 42 \
   >> "$log_file" 2>&1 < /dev/null &
 echo "PID=$! 日志=$log_file"
 tail -f "$log_file"
 ```
 
-默认保存测速结果而不保存模型权重。若需要之后加载这四个模型推理，在首次命令上添加 `--save-weights`；每组保存最终权重和 tokenizer，约增加 7.5 GiB，四组约 30 GiB（估计值），保存耗时单独记录。这里保存的权重不含优化器恢复状态。
+默认保存测速结果而不保存 adapter。若需要之后加载这四个模型推理，在首次命令上添加 `--save-weights`；每组保存最终 LoRA adapter、Base commit/量化配置和 tokenizer，不重复保存完整 Base，保存耗时单独记录。这里不保存优化器恢复状态。推理须加载固定 Base 再加载 adapter，可使用 `recipe.modeling.load_model(权重目录)`。
 
 ## 查看结果
 
 ```bash
-column -s, -t < /data/repeat_sft/runs/benchmark-s42/summary.csv
+column -s, -t < /data/repeat_sft/runs/benchmark-lora-s42/summary.csv
 ```
 
 也可以下载 `summary.csv` 用表格软件查看。详细定义：
@@ -94,7 +94,7 @@ column -s, -t < /data/repeat_sft/runs/benchmark-s42/summary.csv
 `summary.json` 还保存所有更新的合计、排除前 16 条后的指标及各组详细状态。原始记录结构：
 
 ```text
-benchmark-s42/
+benchmark-lora-s42/
   benchmark.json, base_config.json     # 实际协议、seed、版本和哈希
   data/, tokenizer/, order.json       # 400 条完整文本、模板及固定顺序
   code/                              # 当次代码与 Git 状态快照
@@ -118,7 +118,7 @@ benchmark-s42/
 修复依赖或重新启动后：
 
 ```bash
-python -u benchmark_train.py --out runs/benchmark-s42 --resume
+python -u benchmark_train.py --out runs/benchmark-lora-s42 --resume
 ```
 
 它验证并使用本次测试冻结的代码、配置和数据，跳过已经完成的组合；未完成组合从同一个 Base 重跑这一轮，另建 `attempt-*` 保留旧日志。**测速没有轮内断点恢复**，避免把跨进程的加载和计时混成一轮。既有正式训练的完整断点恢复机制保持原样。

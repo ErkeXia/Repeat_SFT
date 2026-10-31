@@ -4,6 +4,6 @@
   "temperature": 0.6,
   "top_p": 0.95,
   "top_k": 20,
-  "max_new_tokens": 30000,
+  "max_new_tokens": 8192,
   "repetition_penalty": 1.0
 }
