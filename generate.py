@@ -9,7 +9,7 @@ from recipe.common import (append_jsonl, checkpoint_path, environment, file_hash
                            recover_jsonl, seed_everything, snapshot_code, stable_seed, write_json)
 from recipe.evaluation import bind_output
 from recipe.modeling import load_model
-from recipe.grouped import select_panel
+from recipe.grouped import GENERATION_EPOCHS, select_panel
 from recipe.paths import artifact_path, configure_runtime
 
 
@@ -27,7 +27,7 @@ def stop_details(ids, eos_id, chat_end_id, limit):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--run", required=True)
-    p.add_argument("--epochs", default="64,32,16,8,4,2,1")
+    p.add_argument("--epochs", default=",".join(map(str, GENERATION_EPOCHS)))
     p.add_argument("--config", default="configs/generation.json")
     p.add_argument("--out", help="Defaults to RUN/evaluations/generation")
     p.add_argument("--limit-per-task", type=int, help="Smoke test only; records a distinct evaluation identity")

@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 import subprocess
 import tempfile
+import time
 from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -15,7 +16,7 @@ import analyze_run
 import generate
 import grouped_evaluation as pipeline
 from recipe.common import ROOT, file_hash, iter_jsonl, read_json, stable_seed, write_json, write_jsonl
-from recipe.grouped import GENERATION_EPOCHS, MAX_NEW_TOKENS, merge_groups, partition_panel, select_panel, teacher_forcing_files
+from recipe.grouped import GENERATION_EPOCHS, MAX_NEW_TOKENS, generation_epochs, merge_groups, partition_panel, select_panel, teacher_forcing_files
 
 TEST_TMP = ROOT / ".test_tmp"
 TEST_TMP.mkdir(exist_ok=True)
@@ -139,10 +140,38 @@ class GroupedTests(unittest.TestCase):
         self.assertFalse((self.job / "state" / "generation-1.done").exists())
         self.assertTrue((self.job / "state" / "loss-0.done").exists())
         self.assertEqual(hashes(self.source), before)
-        self.assertEqual(plan["generation_epochs"], [64, 32, 16, 8, 4, 2, 1])
+        self.assertEqual(plan["generation_epochs"], [64, 32, 16, 8, 4])
         self.assertEqual(plan["fit_epochs"], FIT_EPOCHS)
         self.assertEqual(plan, pipeline.prepare_job(self.run, self.job, args()))
         self.assertEqual(hashes(self.source), before)
+
+    def test_explicit_epochs_are_descending_and_resume_cannot_change_selection(self):
+        plan = pipeline.prepare_job(self.run, self.job, args(epochs="4,8,16,32,64"))
+        self.assertEqual(plan["generation_epochs"], [64, 32, 16, 8, 4])
+        generate_group(self.job, plan, plan["groups"][0])
+        before = hashes(self.job)
+        self.assertEqual(plan, pipeline.prepare_job(self.run, self.job, args(epochs="64,32,16,8,4")))
+        with self.assertRaisesRegex(ValueError, "Generation epochs differ"):
+            pipeline.prepare_job(self.run, self.job, args(epochs="64,32,16,8,4,2,1"))
+        self.assertEqual(before, hashes(self.job))
+        for value in ("", "4,4", "-1,4", "4,x", "4,"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                generation_epochs(value)
+
+    def test_legacy_saved_selection_is_kept_when_resuming_without_epochs(self):
+        old_epochs = [64, 32, 16, 8, 4, 2, 1]
+        plan = pipeline.prepare_job(self.run, self.job, args(epochs=",".join(map(str, old_epochs))))
+        self.assertEqual(plan, pipeline.prepare_job(self.run, self.job, args()))
+        self.assertEqual(plan["generation_epochs"], old_epochs)
+        with self.assertRaisesRegex(ValueError, "Generation epochs differ"):
+            pipeline.prepare_job(self.run, self.job, args(epochs="4,8,16,32,64"))
+
+    def test_unavailable_epoch_fails_without_publishing_job(self):
+        before = hashes(self.source)
+        with self.assertRaisesRegex(ValueError, "not in this run"):
+            pipeline.prepare_job(self.run, self.job, args(epochs="3,4"))
+        self.assertFalse((self.job / "grouped_pipeline.json").exists())
+        self.assertEqual(before, hashes(self.source))
 
     def test_invalid_fitting_cannot_reset_old_generation(self):
         old = self.job / "generation" / "old.json"
@@ -220,7 +249,10 @@ class GroupedTests(unittest.TestCase):
             self.assertEqual(len(calls), finished_calls)
         generation = [r for r in calls if r[0] == "generate.py"]
         self.assertEqual([r[1] for r in generation], ["group-001", "group-002", "group-002", "group-003", "group-004"])
-        self.assertTrue(all(r[2] == "64,32,16,8,4,2,1" for r in generation))
+        self.assertTrue(all(r[2] == "64,32,16,8,4" for r in generation))
+        self.assertEqual(len(list((self.job / "generation").glob("epoch-*"))), 5)
+        self.assertEqual(sum(len(list(iter_jsonl(p))) for p in
+                             (self.job / "generation").glob("epoch-*/responses.jsonl")), 960)
         self.assertEqual(hashes(self.source), before)
         summary = read_json(self.job / "analysis" / "summary.json")
         self.assertEqual(summary["epochs"], FIT_EPOCHS)
@@ -246,6 +278,42 @@ class GroupedTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "already running"):
                 with pipeline.job_lock(self.job):
                     self.fail("Concurrent job obtained the lock")
+
+    @unittest.skipUnless(os.name == "posix", "POSIX inherited flock requires Linux")
+    def test_stage_keeps_lock_after_launcher_is_force_killed(self):
+        ready, release = self.root / "ready", self.root / "release"
+        child_code = ("from pathlib import Path; import time; "
+                      f"Path({str(ready)!r}).write_text('ready'); "
+                      "deadline = time.monotonic() + 15\n"
+                      f"while not Path({str(release)!r}).exists() and time.monotonic() < deadline: time.sleep(.05)\n")
+        parent_code = ("from pathlib import Path; import sys; import grouped_evaluation as p\n"
+                       f"with p.job_lock(Path({str(self.job)!r})):\n"
+                       f"    p.invoke([sys.executable, '-B', '-c', {child_code!r}], Path({str(ROOT)!r}))\n")
+        parent = subprocess.Popen([sys.executable, "-B", "-c", parent_code], cwd=ROOT)
+        try:
+            deadline = time.monotonic() + 10
+            while not ready.exists() and parent.poll() is None and time.monotonic() < deadline:
+                time.sleep(.05)
+            self.assertTrue(ready.exists(), "Stage did not start")
+            parent.kill()
+            parent.wait(timeout=5)
+            with self.assertRaisesRegex(RuntimeError, "already running"):
+                with pipeline.job_lock(self.job):
+                    self.fail("Orphaned stage lost its lock")
+        finally:
+            release.write_text("release", encoding="utf-8")
+            if parent.poll() is None:
+                parent.kill()
+                parent.wait(timeout=5)
+        deadline = time.monotonic() + 5
+        while True:
+            try:
+                with pipeline.job_lock(self.job):
+                    break
+            except RuntimeError:
+                if time.monotonic() > deadline:
+                    raise
+                time.sleep(.05)
 
     def test_changed_fitting_evidence_prevents_gpu_stages(self):
         pipeline.prepare_job(self.run, self.job, args())
@@ -313,8 +381,19 @@ class GroupedTests(unittest.TestCase):
             saved = out / "epoch-064" / "responses.jsonl"
             self.assertEqual(len(list(iter_jsonl(saved))), 1)
             first = saved.read_bytes()
+            # A force kill can interrupt the final append. Preserve the torn
+            # bytes separately, then replay only the unfinished question.
+            with saved.open("ab") as f:
+                f.write(b'{"sample_id":"unfinished')
+            torn = saved.read_bytes()
             generate.main()
             self.assertTrue(saved.read_bytes().startswith(first))
+            backups = list(saved.parent.glob("responses.jsonl.torn-*"))
+            self.assertEqual(len(backups), 1)
+            self.assertEqual(backups[0].read_bytes(), torn)
+            complete_bytes = saved.read_bytes()
+            generate.main()
+            self.assertEqual(saved.read_bytes(), complete_bytes)
         self.assertEqual(calls, [8192, 8192, 8192])
         rows = list(iter_jsonl(saved))
         self.assertEqual(len(rows), 2)

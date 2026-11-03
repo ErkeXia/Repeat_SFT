@@ -7,8 +7,21 @@ from pathlib import Path
 
 from .common import digest, file_hash, iter_jsonl, read_json, write_json, write_jsonl
 
-GENERATION_EPOCHS = [64, 32, 16, 8, 4, 2, 1]
+GENERATION_EPOCHS = [64, 32, 16, 8, 4]
 MAX_NEW_TOKENS = 8192
+
+
+def generation_epochs(value=None):
+    """Normalize a new job's selection; saved jobs retain their frozen selection."""
+    if value is None:
+        return list(GENERATION_EPOCHS)
+    try:
+        epochs = [int(part.strip()) for part in value.split(",")]
+    except (ValueError, AttributeError) as exc:
+        raise ValueError("--epochs must be comma-separated nonnegative integers") from exc
+    if not epochs or min(epochs) < 0 or len(set(epochs)) != len(epochs):
+        raise ValueError("--epochs must be nonempty, unique and nonnegative")
+    return sorted(epochs, reverse=True)
 
 
 def select_panel(panel, ids):

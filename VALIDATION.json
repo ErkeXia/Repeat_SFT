@@ -1,25 +1,29 @@
 {
-  "checked_at_utc": "2026-10-30T12:54:36.160216+00:00",
+  "checked_at_utc": "2026-11-03T09:49:27.662912+00:00",
   "project_directory": "D:\\data_recipe_research",
-  "code_sha256": "33140289e923f0bf474ac707f08289967921db0f073151b08d4889c1423f0b99",
+  "code_sha256": "eee2f52b25068e2d9b0be9377b63074d57f787fbbe61ecff1f3066970f8ef1d6",
   "offline_unit_tests": {
     "command": "python -B -m unittest discover -s tests -v",
-    "total": 82,
-    "passed": 81,
+    "total": 86,
+    "passed": 84,
     "failed": 0,
     "skipped": [
+      [
+        "test_stage_keeps_lock_after_launcher_is_force_killed (test_grouped_evaluation.GroupedTests.test_stage_keeps_lock_after_launcher_is_force_killed)",
+        "POSIX inherited flock requires Linux"
+      ],
       [
         "test_missing_data_mount_is_rejected_without_writes (test_storage_resume.PathTests.test_missing_data_mount_is_rejected_without_writes)",
         "Linux mount guard; Windows does not have /data mounts"
       ]
     ],
-    "log": ".test_tmp/a6000-tests.log",
+    "log": ".test_tmp/e4plus-tests.log",
     "dependency_path": ".test_tmp/lora-deps"
   },
   "python_syntax_files_checked": 34,
-  "cli_help_entrypoints_checked": 12,
+  "cli_help_entrypoints_checked": 3,
   "bash_scripts_checked": 2,
-  "documentation_bash_blocks_checked": 34,
+  "documentation_bash_blocks_checked": 27,
   "utf8_documentation_and_local_links": "passed",
   "git_diff_check": "passed",
   "local_torch": "2.6.0+cpu",
@@ -66,28 +70,55 @@
       32,
       16,
       8,
-      4,
-      2,
-      1
+      4
     ],
     "max_new_tokens": 8192,
     "groups": 4,
     "math500_per_group": 32,
     "gpqa_per_group": 16,
     "preserves_fitting_evidence": true,
-    "no_base_generation_in_grouped_default": true
+    "no_base_generation_in_grouped_default": true,
+    "total_generated_answers": 960,
+    "default_job_name": "grouped-e4plus-8192-v1",
+    "explicit_epoch_selection": true,
+    "resume_tests": [
+      "Completed group outputs remain byte-identical after stage failure and resume",
+      "Complete question rows preserved; torn trailing line backed up; only unfinished question replayed",
+      "Changed epoch selection rejected on resume; saved seven-node jobs retain their selection",
+      "Fitting evidence hashes unchanged; merged panel covers five checkpoints and 960 responses",
+      "Linux stage retains inherited job lock after launcher SIGKILL"
+    ]
   },
   "launchers": {
     "run_analysis.sh": "4e1198694f60e3f863eda2841450ef5fb5c9275c53a6b183384eca99b14a72fa",
-    "run_grouped_analysis.sh": "6a2f0648819690258168e2d41fa8030d27b4cab4b167be986a75b7ed0a5dbc99"
+    "run_grouped_analysis.sh": "3aa2f7e23061ec1e3474eb0c466ad5a9ae0f51e9c686ad3304b4f5f79518145c"
   },
   "notes": [
-    "Tests use only synthetic data and tiny randomly initialized Qwen models. Test dependencies installed under ignored .test_tmp only.",
-    "Existing checkpoint/recovery, grading/analysis, grouped-evaluation and four-case benchmark regression tests pass.",
-    "Real GPU BF16 LoRA, optional quantization kernels, bitsandbytes optimizer continuation, long-context VRAM and Linux mount guard still require the VM.",
-    "Default 10240-token data filter and 8192-new-token generation are retained; no silent truncation, example dropping or OOM fallback.",
-    "Old full-parameter runs and fitting artifacts are not converted or modified; new LoRA runs must use fresh directories.",
-    "No VM files, Git commits, pushes or remote repository state were changed.",
-    "Hardware corrected to RTX A6000; default Base is BF16 without quantization. Existing NF4 runs retain their frozen configuration. Full 82-test suite rerun after correction."
+    "Tests use only synthetic data and tiny randomly initialized models; no pretrained weights or datasets downloaded.",
+    "Current regression suite: 84 passed and 2 Linux-only tests skipped on Windows; new Linux SIGKILL lock test separately passed under existing WSL Ubuntu.",
+    "Real GPU generation, throughput, VRAM and VM process lifecycle are not measured by these local checks.",
+    "Training settings and fitting semantics unchanged. New grouped jobs use epochs 64/32/16/8/4; saved jobs keep their frozen protocol.",
+    "Use a new job name and the validated repaired teacher-forcing source when original results contain duplicates.",
+    "Completed answers survive interruption. The unfinished question is restarted; there is no mid-question token/KV-cache resume.",
+    "README, VM TODO and grouped evaluation instructions updated. No VM files, commits, pushes or remote repository state changed."
+  ],
+  "linux_lock_test": {
+    "environment": "Existing WSL Ubuntu, no new downloads",
+    "command": "python3 -B -m unittest discover -s tests -p test_grouped_evaluation.py -k stage_keeps_lock -v",
+    "passed": 1,
+    "failed": 0,
+    "seconds": 5.754,
+    "checks": "SIGKILL launcher; live stage still holds flock; lock released after stage exits"
+  },
+  "cli_help_entrypoints": [
+    "grouped_evaluation.py",
+    "generate.py",
+    "analyze_run.py"
+  ],
+  "documentation_checked": [
+    "README.md",
+    "TODO_VM.md",
+    "GROUPED_EVALUATION.md",
+    "ANALYSIS.md"
   ]
 }

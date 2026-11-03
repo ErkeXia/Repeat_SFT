@@ -145,13 +145,16 @@ tail -f /data/repeat_sft/logs/random-lora-s42.loss.log
 拟合完整后：
 
 ```bash
-nohup bash run_grouped_analysis.sh runs/random-lora-s42 grouped-8192-v1 \
-  >> /data/repeat_sft/logs/random-lora-s42.grouped.log 2>&1 < /dev/null &
-echo "$!" > /data/repeat_sft/logs/random-lora-s42.grouped.pid
-tail -f /data/repeat_sft/logs/random-lora-s42.grouped.log
+nohup bash run_grouped_analysis.sh runs/random-lora-s42 grouped-e4plus-8192-v1 \
+  --epochs 4,8,16,32,64 \
+  >> /data/repeat_sft/logs/random-lora-s42.grouped-e4plus.log 2>&1 < /dev/null &
+echo "$!" > /data/repeat_sft/logs/random-lora-s42.grouped-e4plus.pid
+tail -f /data/repeat_sft/logs/random-lora-s42.grouped-e4plus.log
 ```
 
-自动找到本 run 完整拟合结果；**不要把旧全参拟合结果给新 LoRA run**。每组 48 题按 64→1 完成并保存报告，再进入下一组。每题完成后写盘，当前题可能长时间没有新日志。停止向记录的 PID 发 SIGTERM；恢复重跑相同命令。**恢复不加 `--reset-generation`**，它只用于主动归档旧生成并重做，见 [分组评测说明](GROUPED_EVALUATION.md)。
+自动找到本 run 完整拟合结果；**不要把旧全参拟合结果给新 LoRA run**。如果拟合结果曾去重，启动命令必须额外传入 `--teacher-forcing runs/random-lora-s42/evaluations/teacher_forcing-dedup-v1`，完整命令见 [分组评测说明](GROUPED_EVALUATION.md)。每组 48 题按 64→32→16→8→4 完成并保存报告，再进入下一组，共 960 条回答。
+
+每题完成后写盘，当前题可能长时间没有新日志。停止向记录的 PID 发 SIGTERM；等待退出后恢复重跑相同命令，保持相同任务名和拟合路径。已完成题跳过，强制结束时当前未写完的题重跑；不恢复单题内的 token 生成进度。**恢复不加 `--reset-generation`**。旧任务保留冻结的节点列表；用新的 `grouped-e4plus-8192-v1` 任务名开始这次五节点评测。
 
 若需要包含 epoch 0 的八节点完整面板，可改用：
 
@@ -172,7 +175,7 @@ nohup bash run_analysis.sh runs/random-lora-s42 full-v1 \
   run.json, data/, tokenizer/                  配置、版本、完整题目/原解答
   checkpoints/epoch-000,...,064/              adapter 与恢复状态
   evaluations/teacher_forcing/                逐样本/逐 token 拟合
-  postprocess/grouped-8192-v1/
+  postprocess/grouped-e4plus-8192-v1/
     groups/group-001/analysis/report.html      第一组报告
     generation/epoch-*/responses.jsonl        全面板原始回答、token、停止原因
     grades/                                   抽取、判分与汇总
@@ -186,12 +189,14 @@ nohup bash run_analysis.sh runs/random-lora-s42 full-v1 \
 
 ```bash
 python grade.py \
-  --responses runs/random-lora-s42/postprocess/grouped-8192-v1/generation \
+  --responses runs/random-lora-s42/postprocess/grouped-e4plus-8192-v1/generation \
   --out runs/random-lora-s42/grades-v2
 python analyze_run.py --run runs/random-lora-s42 \
-  --epochs 0,1,2,4,8,16,32,64 --generation-epochs 1,2,4,8,16,32,64 \
+  --epochs 0,1,2,4,8,16,32,64 --generation-epochs 4,8,16,32,64 \
   --grades runs/random-lora-s42/grades-v2 --out runs/random-lora-s42/analysis-v2
 ```
+
+若使用去重后的拟合目录，上面的 `analyze_run.py` 同样要加 `--teacher-forcing runs/random-lora-s42/evaluations/teacher_forcing-dedup-v1`。默认五节点生成没有 1/2 轮结果，不能计算完整的 1—4 轮早期正确率排名；需要此对比时另建包含这些节点的任务。
 
 ## 8. 可选：初始 loss 低/中/高组
 
@@ -214,10 +219,10 @@ done
 
 ```bash
 python export_curves.py \
-  --run random runs/random-lora-s42 runs/random-lora-s42/postprocess/grouped-8192-v1/grades \
-  --run low runs/low-lora-s42 runs/low-lora-s42/postprocess/grouped-8192-v1/grades \
-  --run mid runs/mid-lora-s42 runs/mid-lora-s42/postprocess/grouped-8192-v1/grades \
-  --run high runs/high-lora-s42 runs/high-lora-s42/postprocess/grouped-8192-v1/grades \
+  --run random runs/random-lora-s42 runs/random-lora-s42/postprocess/grouped-e4plus-8192-v1/grades \
+  --run low runs/low-lora-s42 runs/low-lora-s42/postprocess/grouped-e4plus-8192-v1/grades \
+  --run mid runs/mid-lora-s42 runs/mid-lora-s42/postprocess/grouped-e4plus-8192-v1/grades \
+  --run high runs/high-lora-s42 runs/high-lora-s42/postprocess/grouped-e4plus-8192-v1/grades \
   --out artifacts/comparison-lora-s42
 ```
 

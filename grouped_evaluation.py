@@ -1,4 +1,4 @@
-"""SERVER: four saved 48-question groups, each evaluated at epochs 64 down to 1."""
+"""SERVER: four saved 48-question groups; default checkpoints 64,32,16,8,4."""
 from __future__ import annotations
 
 import argparse
@@ -14,11 +14,13 @@ import uuid
 
 from recipe.common import (ROOT, checkpoint_path, environment, file_hash, iter_jsonl, now, read_json,
                            snapshot_code, write_json, write_jsonl)
-from recipe.grouped import GENERATION_EPOCHS, MAX_NEW_TOKENS, merge_groups, partition_panel, select_panel, teacher_forcing_files
+from recipe.grouped import MAX_NEW_TOKENS, generation_epochs, merge_groups, partition_panel, select_panel, teacher_forcing_files
 from recipe.paths import artifact_path, configure_runtime
 from recipe.resume import verified_code, verify_run_inputs
 
 _child = None
+_job_lock_fd = None
+LOCK_FD_ENV = "REPEAT_SFT_GROUPED_LOCK_FD"
 
 
 def stop(signum, _frame):
@@ -33,7 +35,13 @@ def stop(signum, _frame):
 
 def invoke(command, cwd):
     global _child
-    _child = subprocess.Popen([str(x) for x in command], cwd=cwd)
+    options = {}
+    if os.name == "posix" and _job_lock_fd is not None:
+        # Keep flock alive in the worker AND its stage child if the launcher is
+        # killed with SIGKILL. A restart must not race an orphan still writing.
+        options = {"pass_fds": (_job_lock_fd,),
+                   "env": {**os.environ, LOCK_FD_ENV: str(_job_lock_fd)}}
+    _child = subprocess.Popen([str(x) for x in command], cwd=cwd, **options)
     try:
         result = _child.wait()
     finally:
@@ -45,6 +53,7 @@ def invoke(command, cwd):
 @contextmanager
 def job_lock(job):
     """Shares the existing shell launcher's flock on Linux."""
+    global _job_lock_fd
     job.mkdir(parents=True, exist_ok=True)
     with (job / "pipeline.lock").open("a+b") as lock:
         try:
@@ -60,12 +69,16 @@ def job_lock(job):
                 msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
         except OSError as exc:
             raise RuntimeError(f"This job is already running: {job}") from exc
+        previous_fd = _job_lock_fd
+        if os.name == "posix":
+            _job_lock_fd = lock.fileno()
         try:
             yield
         finally:
-            if os.name == "posix":
-                fcntl.flock(lock, fcntl.LOCK_UN)
-            else:
+            _job_lock_fd = previous_fd
+            # On POSIX, close our descriptor rather than explicitly unlocking:
+            # inherited descriptors must protect any surviving stage child.
+            if os.name != "posix":
                 lock.seek(0)
                 msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
 
@@ -124,6 +137,7 @@ def locate_fitting(run, job, explicit, epochs, metadata):
 
 def prepare_job(run, job, args):
     metadata = verify_run_inputs(run)
+    requested_epochs = getattr(args, "epochs", None)
     path = job / "grouped_pipeline.json"
     if path.exists() and not args.reset_generation:
         plan = read_json(path)
@@ -131,13 +145,17 @@ def prepare_job(run, job, args):
             raise ValueError("Grouped job belongs to a different run")
         if args.teacher_forcing and str(artifact_path(args.teacher_forcing)) != plan["teacher_forcing"]:
             raise ValueError("Teacher-forcing source changed; resume with the saved source")
+        if requested_epochs is not None and generation_epochs(requested_epochs) != plan["generation_epochs"]:
+            raise ValueError("Generation epochs differ from this saved job. Use its saved --epochs to resume, "
+                             "or choose a NEW job name for a different selection; existing answers are preserved.")
         verified_code(job / "grouped_code", plan["code_sha256"])
         return plan
     panel = list(iter_jsonl(run / "data" / "panel.jsonl"))
     groups = partition_panel(panel)
+    gen_epochs = generation_epochs(requested_epochs)
     fit_epochs = sorted(set(metadata["config"]["checkpoint_epochs"]))
-    if not set(GENERATION_EPOCHS).issubset(fit_epochs):
-        raise ValueError("This run does not contain all seven requested training checkpoints")
+    if not set(gen_epochs).issubset(fit_epochs):
+        raise ValueError(f"Requested generation checkpoints are not in this run: {sorted(set(gen_epochs) - set(fit_epochs))}")
     checkpoints = {}
     for epoch in fit_epochs:
         ckpt = checkpoint_path(run, epoch)
@@ -170,7 +188,7 @@ def prepare_job(run, job, args):
             group_files[(directory / name).relative_to(job).as_posix()] = file_hash(directory / name)
     plan = {"version": 1, "created_at": now(), "run": str(run), "run_sha256": file_hash(run / "run.json"),
             "panel_sha256": file_hash(run / "data" / "panel.jsonl"), "panel_ids": [r["sample_id"] for r in panel],
-            "generation_epochs": GENERATION_EPOCHS, "fit_epochs": fit_epochs, "settings": settings,
+            "generation_epochs": gen_epochs, "fit_epochs": fit_epochs, "settings": settings,
             "groups": groups, "group_files": group_files, "code_sha256": code_hash, "checkpoints": checkpoints,
             "launcher_sha256": file_hash(job / "grouped_launcher.sh") if launcher.exists() else None,
             "teacher_forcing": str(source), "teacher_forcing_files": hashes,
@@ -256,9 +274,11 @@ def execute(job):
 
 
 def main():
+    global _job_lock_fd
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("run", nargs="?", default="runs/random-lora-s42")
-    p.add_argument("job_name", nargs="?", default="grouped-8192-v1")
+    p.add_argument("job_name", nargs="?", default="grouped-e4plus-8192-v1")
+    p.add_argument("--epochs", help="New jobs default to 64,32,16,8,4; always descending. Resume uses the saved list.")
     p.add_argument("--teacher-forcing", help="Reuse complete fitting results; auto-detect by default")
     p.add_argument("--reset-generation", action="store_true", help="ONCE: replace this job's generation/reports with backups; preserve fitting results")
     p.add_argument("--worker", help=argparse.SUPPRESS)
@@ -267,6 +287,9 @@ def main():
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
     if args.worker:
+        if os.name == "posix" and LOCK_FD_ENV in os.environ:
+            _job_lock_fd = int(os.environ[LOCK_FD_ENV])
+            os.fstat(_job_lock_fd)  # Fail if the inherited lock was lost.
         execute(Path(args.worker).resolve())
         return
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", args.job_name):
