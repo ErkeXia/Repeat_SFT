@@ -218,7 +218,8 @@ class Analysis:
             write_json(self.out / "inputs" / "generation" / f"epoch-{epoch:03d}" / "identity.json", identity)
             if identity["panel_sha256"] != file_hash(self.run / "data" / "panel.jsonl"):
                 raise ValueError("Generation used a different evaluation panel")
-            signatures.add(digest({k: identity.get(k) for k in ("settings", "generation_config", "selected_ids", "seed_policy")}))
+            signatures.add(digest({k: identity.get(k) for k in ("settings", "generation_config", "selected_ids", "seed_policy",
+                                                               "backend", "backend_config")}))
             selected = identity["selected_ids"]
             if len(set(selected)) != len(selected) or not set(selected).issubset(panel):
                 raise ValueError("Duplicate/unexpected generation selected IDs")

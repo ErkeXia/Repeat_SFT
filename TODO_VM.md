@@ -130,6 +130,8 @@ echo "$!" > /data/repeat_sft/logs/random-lora-s42.train.pid
 - [ ] 完成八个节点的 train/holdout 拟合评测。
 - [ ] 再启动四组生成、判分、分析；同一 GPU 串行执行。
 
+本次要用 **vLLM 并发 8** 时：拟合完成后，按 [VLLM_EVALUATION.md](VLLM_EVALUATION.md) 在 `/data/repeat_sft/venvs/vllm-0.11.0` 安装独立环境，并用 `run_grouped_vllm.sh` 启动 `grouped-e4plus-vllm-v1`。如果拟合曾去重，显式指定 `teacher_forcing-dedup-v1`。不要把 vLLM 装进训练 `.venv`，也不要与下面的 Transformers 生成任务同时占用 GPU。下面保留原后端的操作方式。
+
 先运行并等待退出：
 
 ```bash

@@ -17,6 +17,7 @@ from recipe.common import (ROOT, checkpoint_path, environment, file_hash, iter_j
 from recipe.grouped import MAX_NEW_TOKENS, generation_epochs, merge_groups, partition_panel, select_panel, teacher_forcing_files
 from recipe.paths import artifact_path, configure_runtime
 from recipe.resume import verified_code, verify_run_inputs
+from recipe.vllm_generation import validate_config as validate_vllm_config
 
 _child = None
 _job_lock_fd = None
@@ -87,6 +88,7 @@ def replacement_paths(job):
     names = {"generation", "groups", "grouped_code", "grouped_pipeline.json", "grouped_launcher.sh",
              "grouped_state", "grouped_complete.json", "grouped_progress.json", "grouped_environment.json",
              "grades_path.txt", "analysis_path.txt"}
+    names.add("vllm_config.json")
     paths = [p for p in job.iterdir() if p.name in names or re.fullmatch(r"(?:grades|analysis)(?:-retry-.*)?", p.name)]
     state = job / "state"
     if state.is_dir():
@@ -138,6 +140,8 @@ def locate_fitting(run, job, explicit, epochs, metadata):
 def prepare_job(run, job, args):
     metadata = verify_run_inputs(run)
     requested_epochs = getattr(args, "epochs", None)
+    requested_backend = getattr(args, "backend", None)
+    requested_vllm_config = getattr(args, "vllm_config", None)
     path = job / "grouped_pipeline.json"
     if path.exists() and not args.reset_generation:
         plan = read_json(path)
@@ -148,11 +152,28 @@ def prepare_job(run, job, args):
         if requested_epochs is not None and generation_epochs(requested_epochs) != plan["generation_epochs"]:
             raise ValueError("Generation epochs differ from this saved job. Use its saved --epochs to resume, "
                              "or choose a NEW job name for a different selection; existing answers are preserved.")
+        if requested_backend is not None and requested_backend != plan.get("generation_backend", "transformers"):
+            raise ValueError("Generation backend differs from this saved job; use a NEW job name, preserve existing answers")
+        if requested_vllm_config and read_json(requested_vllm_config) != plan.get("vllm_config"):
+            raise ValueError("vLLM engine configuration changed; resume with the frozen settings")
         verified_code(job / "grouped_code", plan["code_sha256"])
         return plan
     panel = list(iter_jsonl(run / "data" / "panel.jsonl"))
     groups = partition_panel(panel)
     gen_epochs = generation_epochs(requested_epochs)
+    backend = requested_backend or "transformers"
+    if backend not in ("transformers", "vllm"):
+        raise ValueError("Unknown generation backend")
+    if requested_vllm_config and backend != "vllm":
+        raise ValueError("--vllm-config requires --backend vllm")
+    vllm_config = None
+    if backend == "vllm":
+        vllm_config = validate_vllm_config(read_json(requested_vllm_config or ROOT / "configs" / "vllm.json"))
+        ft = metadata["config"].get("finetuning", {})
+        if ft.get("method") != "lora" or ft.get("base_quantization") != "none":
+            raise ValueError("vLLM generation requires a BF16 LoRA run; use Transformers for NF4/legacy runs")
+        if ft["rank"] > vllm_config["max_lora_rank"]:
+            raise ValueError("LoRA rank exceeds vLLM max_lora_rank")
     fit_epochs = sorted(set(metadata["config"]["checkpoint_epochs"]))
     if not set(gen_epochs).issubset(fit_epochs):
         raise ValueError(f"Requested generation checkpoints are not in this run: {sorted(set(gen_epochs) - set(fit_epochs))}")
@@ -176,7 +197,7 @@ def prepare_job(run, job, args):
     staged = job / (".grouped-code-" + uuid.uuid4().hex)
     code_hash = snapshot_code(staged)
     staged.rename(job / "grouped_code")
-    launcher = ROOT / "run_grouped_analysis.sh"
+    launcher = ROOT / ("run_grouped_vllm.sh" if backend == "vllm" else "run_grouped_analysis.sh")
     if launcher.exists():
         shutil.copy2(launcher, job / "grouped_launcher.sh")
     group_files = {}
@@ -186,15 +207,18 @@ def prepare_job(run, job, args):
         write_jsonl(directory / "panel.jsonl", select_panel(panel, group["selected_ids"]))
         for name in ("sample_ids.json", "panel.jsonl"):
             group_files[(directory / name).relative_to(job).as_posix()] = file_hash(directory / name)
-    plan = {"version": 1, "created_at": now(), "run": str(run), "run_sha256": file_hash(run / "run.json"),
+    if vllm_config is not None:
+        write_json(job / "vllm_config.json", vllm_config)
+    plan = {"version": 2, "created_at": now(), "run": str(run), "run_sha256": file_hash(run / "run.json"),
             "panel_sha256": file_hash(run / "data" / "panel.jsonl"), "panel_ids": [r["sample_id"] for r in panel],
             "generation_epochs": gen_epochs, "fit_epochs": fit_epochs, "settings": settings,
+            "generation_backend": backend, "vllm_config": vllm_config,
             "groups": groups, "group_files": group_files, "code_sha256": code_hash, "checkpoints": checkpoints,
             "launcher_sha256": file_hash(job / "grouped_launcher.sh") if launcher.exists() else None,
             "teacher_forcing": str(source), "teacher_forcing_files": hashes,
             "previous_generation_backup": str(backup) if backup else None,
             "stop_policy": "Stop at EOS or exactly 8192 new tokens; capped output is length-truncated, never a fabricated EOS.",
-            "execution_order": "group -> descending checkpoint -> fixed question order"}
+            "execution_order": "group -> descending checkpoint -> fixed submission order; concurrent completions may be out of order"}
     write_json(path, plan)
     write_json(job / "grouped_environment.json", environment())
     return plan
@@ -218,8 +242,11 @@ def execute(job):
     source = Path(plan["teacher_forcing"])
     if teacher_forcing_files(run, source, plan["fit_epochs"], metadata) != plan["teacher_forcing_files"]:
         raise ValueError("Saved teacher-forcing evidence changed")
+    backend = plan.get("generation_backend", "transformers")
+    if backend == "vllm" and read_json(job / "vllm_config.json") != plan["vllm_config"]:
+        raise ValueError("Frozen vLLM engine configuration changed")
     print(f"Job: {job}\nReusing fitting evidence: {source}\nGeneration epochs: {plan['generation_epochs']}\n"
-          f"Max new tokens: {MAX_NEW_TOKENS}; 4 groups x 48 questions", flush=True)
+          f"Max new tokens: {MAX_NEW_TOKENS}; 4 groups x 48 questions; backend={backend}", flush=True)
     state = job / "grouped_state"
     state.mkdir(exist_ok=True)
     gen_epochs = ",".join(map(str, plan["generation_epochs"]))
@@ -253,9 +280,11 @@ def execute(job):
         name = group["name"]
         directory = job / "groups" / name
         print(f"GROUP {index}/4: 32 MATH500 + 16 GPQA; epochs {gen_epochs}", flush=True)
-        stage(name + "-generation", "generate.py", ["--run", run, "--epochs", gen_epochs,
+        generation_script = "generate_vllm.py" if backend == "vllm" else "generate.py"
+        extra = ["--engine-config", job / "vllm_config.json"] if backend == "vllm" else []
+        stage(name + "-generation", generation_script, ["--run", run, "--epochs", gen_epochs,
               "--sample-ids", directory / "sample_ids.json", "--progress-label", f"group={index}/4",
-              "--config", code / "configs" / "generation.json", "--out", directory / "generation"])
+              "--config", code / "configs" / "generation.json", "--out", directory / "generation", *extra])
         grades = stage(name + "-grading", "grade.py", ["--responses", directory / "generation"], directory / "grades")
         analysis = stage(name + "-analysis", "analyze_run.py", ["--run", run, "--epochs", fit_epochs,
               "--generation-epochs", gen_epochs, "--teacher-forcing", source, "--grades", grades,
@@ -277,7 +306,9 @@ def main():
     global _job_lock_fd
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("run", nargs="?", default="runs/random-lora-s42")
-    p.add_argument("job_name", nargs="?", default="grouped-e4plus-8192-v1")
+    p.add_argument("job_name", nargs="?", help="New defaults: grouped-e4plus-8192-v1 or grouped-e4plus-vllm-v1")
+    p.add_argument("--backend", choices=("transformers", "vllm"), help="New jobs default to Transformers; resume keeps the saved backend")
+    p.add_argument("--vllm-config", help="New vLLM jobs: defaults to configs/vllm.json; frozen on first launch")
     p.add_argument("--epochs", help="New jobs default to 64,32,16,8,4; always descending. Resume uses the saved list.")
     p.add_argument("--teacher-forcing", help="Reuse complete fitting results; auto-detect by default")
     p.add_argument("--reset-generation", action="store_true", help="ONCE: replace this job's generation/reports with backups; preserve fitting results")
@@ -292,6 +323,8 @@ def main():
             os.fstat(_job_lock_fd)  # Fail if the inherited lock was lost.
         execute(Path(args.worker).resolve())
         return
+    if args.job_name is None:
+        args.job_name = "grouped-e4plus-vllm-v1" if args.backend == "vllm" else "grouped-e4plus-8192-v1"
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", args.job_name):
         p.error("Invalid job name")
     run = artifact_path(args.run)

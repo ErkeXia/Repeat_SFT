@@ -36,6 +36,9 @@ def main():
             if identity["run_sha256"] != file_hash(run / "run.json"):
                 raise ValueError("Grade directory belongs to a different training run")
             comparison_settings.add(digest({"generation": identity["settings"],
+                                            "generation_backend": identity.get("backend", "transformers"),
+                                            "backend_config": identity.get("backend_config"),
+                                            "generation_config": identity.get("generation_config"),
                                             "selected_ids": identity["selected_ids"],
                                             "grader": grading_manifest["grader_version"],
                                             "grader_code": grading_manifest["code_sha256"],

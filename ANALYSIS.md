@@ -6,6 +6,8 @@
 
 现有 `evaluate_loss.py`、`generate.py`、`grade.py` 负责计算并保存评测结果；新增 `analyze_run.py` 将这些结果跨检查点关联起来。分析阶段只读已保存的结果，在 CPU 上运行，不下载数据或模型，不加载训练权重。
 
+`generate_vllm.py` 使用同样的逐题结果结构，也可直接判分和分析；操作见 [VLLM_EVALUATION.md](VLLM_EVALUATION.md)。评测身份额外绑定后端、运行版本和引擎参数，不能把 Transformers 与 vLLM 回答混入同一条曲线。并发请求的逐题时间有重叠，整体耗时请看节点的 `generation_attempts.jsonl`。
+
 按照本次实验的约定：
 
 | 数据 | 观察内容 |

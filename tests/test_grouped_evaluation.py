@@ -36,7 +36,9 @@ def fixture(root):
     for split, rows in (("train", training), ("holdout", holdout), ("panel", panel)):
         write_jsonl(run / "data" / f"{split}.jsonl", rows)
     write_json(run / "tokenizer" / "tokenizer_config.json", {"fixture": True})
-    metadata = {"config": {"checkpoint_epochs": FIT_EPOCHS, "expected_train_size": 1, "attention_implementation": "sdpa"},
+    metadata = {"config": {"checkpoint_epochs": FIT_EPOCHS, "expected_train_size": 1, "attention_implementation": "sdpa",
+                           "finetuning": read_json(ROOT / "configs" / "baseline.json")["finetuning"]},
+                "model": {"id": "synthetic-qwen", "revision": "frozen-synthetic-revision"},
                 "config_sha256": "synthetic-config",
                 "data_files": {s + ".jsonl": file_hash(run / "data" / (s + ".jsonl")) for s in ("train", "holdout", "panel")},
                 "tokenizer_files": {"tokenizer_config.json": file_hash(run / "tokenizer" / "tokenizer_config.json")}}
@@ -79,6 +81,8 @@ def generate_group(job, plan, group):
                     "checkpoint": read_json(Path(plan["run"]) / "checkpoints" / f"epoch-{epoch:03d}" / "complete.json"),
                     "settings": plan["settings"], "generation_config": {"max_new_tokens": 8192},
                     "selected_ids": group["selected_ids"], "seed_policy": "fixed", "code_sha256": plan["code_sha256"]}
+        if plan.get("generation_backend") == "vllm":
+            identity.update(backend="vllm", backend_config={"synthetic": True, "config": plan["vllm_config"]})
         write_json(out / "identity.json", identity)
         rows = [{"sample_id": q["sample_id"], "question_id": q["question_id"], "task": q["task"], "epoch": epoch,
                  "messages": q["messages"], "gold_answer": q["gold_answer"],
@@ -173,6 +177,20 @@ class GroupedTests(unittest.TestCase):
         self.assertFalse((self.job / "grouped_pipeline.json").exists())
         self.assertEqual(before, hashes(self.source))
 
+    def test_backend_and_vllm_settings_cannot_change_on_resume(self):
+        plan = pipeline.prepare_job(self.run, self.job, args(backend="vllm"))
+        self.assertEqual(plan["vllm_config"]["max_num_seqs"], 8)
+        before = hashes(self.job)
+        self.assertEqual(plan, pipeline.prepare_job(self.run, self.job, args()))
+        with self.assertRaisesRegex(ValueError, "backend differs"):
+            pipeline.prepare_job(self.run, self.job, args(backend="transformers"))
+        self.assertEqual(before, hashes(self.job))
+        write_json(self.job / "vllm_config.json", {**plan["vllm_config"], "gpu_memory_utilization": .9})
+        with patch.object(pipeline, "invoke") as invoke:
+            with self.assertRaisesRegex(ValueError, "vLLM engine configuration changed"):
+                pipeline.execute(self.job)
+            invoke.assert_not_called()
+
     def test_invalid_fitting_cannot_reset_old_generation(self):
         old = self.job / "generation" / "old.json"
         write_json(old, {"keep": True})
@@ -210,8 +228,14 @@ class GroupedTests(unittest.TestCase):
             merge_groups(self.job, plan)
 
     def test_worker_group_barrier_failure_resume_and_full_reports(self):
+        self.check_worker_group_barrier_failure_resume_and_full_reports("transformers")
+
+    def test_vllm_group_barrier_resume_full_merge_and_analysis(self):
+        self.check_worker_group_barrier_failure_resume_and_full_reports("vllm")
+
+    def check_worker_group_barrier_failure_resume_and_full_reports(self, backend):
         before = hashes(self.source)
-        plan = pipeline.prepare_job(self.run, self.job, args())
+        plan = pipeline.prepare_job(self.run, self.job, args(backend=backend))
         calls = []
         fail = [True]
 
@@ -219,7 +243,10 @@ class GroupedTests(unittest.TestCase):
             script = Path(command[3]).name
             flags = dict(zip(command[4::2], command[5::2]))
             out = Path(flags["--out"])
-            if script == "generate.py":
+            if script in ("generate.py", "generate_vllm.py"):
+                self.assertEqual(script, "generate_vllm.py" if backend == "vllm" else "generate.py")
+                if backend == "vllm":
+                    self.assertEqual(read_json(flags["--engine-config"])["max_num_seqs"], 8)
                 group = next(g for g in plan["groups"] if g["name"] == out.parent.name)
                 calls.append((script, group["name"], flags["--epochs"]))
                 if group["name"] == "group-002":
@@ -247,7 +274,7 @@ class GroupedTests(unittest.TestCase):
             finished_calls = len(calls)
             pipeline.execute(self.job)
             self.assertEqual(len(calls), finished_calls)
-        generation = [r for r in calls if r[0] == "generate.py"]
+        generation = [r for r in calls if r[0] in ("generate.py", "generate_vllm.py")]
         self.assertEqual([r[1] for r in generation], ["group-001", "group-002", "group-002", "group-003", "group-004"])
         self.assertTrue(all(r[2] == "64,32,16,8,4" for r in generation))
         self.assertEqual(len(list((self.job / "generation").glob("epoch-*"))), 5)

@@ -1,11 +1,11 @@
 {
-  "checked_at_utc": "2026-11-03T09:49:27.662912+00:00",
+  "checked_at_utc": "2026-11-03T11:47:29.053762+00:00",
   "project_directory": "D:\\data_recipe_research",
-  "code_sha256": "eee2f52b25068e2d9b0be9377b63074d57f787fbbe61ecff1f3066970f8ef1d6",
+  "code_sha256": "7e8a2c668d7e08bc34ba0e1dca481848075f03deb82e0503f3ea99123bd22454",
   "offline_unit_tests": {
     "command": "python -B -m unittest discover -s tests -v",
-    "total": 86,
-    "passed": 84,
+    "total": 98,
+    "passed": 96,
     "failed": 0,
     "skipped": [
       [
@@ -17,13 +17,14 @@
         "Linux mount guard; Windows does not have /data mounts"
       ]
     ],
-    "log": ".test_tmp/e4plus-tests.log",
-    "dependency_path": ".test_tmp/lora-deps"
+    "log": ".test_tmp/vllm-tests.log",
+    "dependency_path": ".test_tmp/lora-deps",
+    "seconds": 50.812999999994645
   },
-  "python_syntax_files_checked": 34,
-  "cli_help_entrypoints_checked": 3,
-  "bash_scripts_checked": 2,
-  "documentation_bash_blocks_checked": 27,
+  "python_syntax_files_checked": 37,
+  "cli_help_entrypoints_checked": 4,
+  "bash_scripts_checked": 3,
+  "documentation_bash_blocks_checked": 30,
   "utf8_documentation_and_local_links": "passed",
   "git_diff_check": "passed",
   "local_torch": "2.6.0+cpu",
@@ -91,26 +92,29 @@
   },
   "launchers": {
     "run_analysis.sh": "4e1198694f60e3f863eda2841450ef5fb5c9275c53a6b183384eca99b14a72fa",
-    "run_grouped_analysis.sh": "3aa2f7e23061ec1e3474eb0c466ad5a9ae0f51e9c686ad3304b4f5f79518145c"
+    "run_grouped_analysis.sh": "3aa2f7e23061ec1e3474eb0c466ad5a9ae0f51e9c686ad3304b4f5f79518145c",
+    "run_grouped_vllm.sh": "3bf1af411c595ec47a8dfa96334a5fb9957c8345288529bba8bd688cdb480a0e"
   },
   "notes": [
-    "Tests use only synthetic data and tiny randomly initialized models; no pretrained weights or datasets downloaded.",
-    "Current regression suite: 84 passed and 2 Linux-only tests skipped on Windows; new Linux SIGKILL lock test separately passed under existing WSL Ubuntu.",
-    "Real GPU generation, throughput, VRAM and VM process lifecycle are not measured by these local checks.",
-    "Training settings and fitting semantics unchanged. New grouped jobs use epochs 64/32/16/8/4; saved jobs keep their frozen protocol.",
-    "Use a new job name and the validated repaired teacher-forcing source when original results contain duplicates.",
-    "Completed answers survive interruption. The unfinished question is restarted; there is no mid-question token/KV-cache resume.",
-    "README, VM TODO and grouped evaluation instructions updated. No VM files, commits, pushes or remote repository state changed."
+    "Only synthetic data and tiny randomly initialized models used in local tests; no pretrained weights or full datasets downloaded.",
+    "Windows regression suite: 96 passed, 2 Linux-only tests skipped. Linux inherited-flock test plus 9 vLLM mock tests separately passed under existing WSL Ubuntu.",
+    "No real vLLM installation, CUDA kernels, GPU generation, throughput or VRAM measured locally; VM validation remains necessary.",
+    "Training settings and teacher-forcing evaluation unchanged. vLLM uses a separate environment and new result directory; fitting evidence is reused.",
+    "Completed answers survive interruption. Up to eight unfinished questions restart; no mid-question KV cache resume or cross-backend/batch-invariant bitwise guarantee.",
+    "Use a new job name and the validated repaired teacher-forcing source if original fitting files contain duplicates.",
+    "README, VM TODO, grouped evaluation and analysis documentation updated; VLLM_EVALUATION.md includes install, nohup launch and resume.",
+    "No VM files, commits, pushes or remote repository state changed. No concurrency 8-vs-16 benchmark added."
   ],
   "linux_lock_test": {
     "environment": "Existing WSL Ubuntu, no new downloads",
     "command": "python3 -B -m unittest discover -s tests -p test_grouped_evaluation.py -k stage_keeps_lock -v",
     "passed": 1,
     "failed": 0,
-    "seconds": 5.754,
+    "seconds": 2.328,
     "checks": "SIGKILL launcher; live stage still holds flock; lock released after stage exits"
   },
   "cli_help_entrypoints": [
+    "generate_vllm.py",
     "grouped_evaluation.py",
     "generate.py",
     "analyze_run.py"
@@ -119,6 +123,49 @@
     "README.md",
     "TODO_VM.md",
     "GROUPED_EVALUATION.md",
+    "VLLM_EVALUATION.md",
     "ANALYSIS.md"
-  ]
+  ],
+  "pinned_engine_options_api_checked": true,
+  "vllm_evaluation": {
+    "version": "0.11.0",
+    "torch": "2.8.0",
+    "transformers": "4.57.1",
+    "runtime": "separate Linux CUDA environment on /data; V1 AsyncLLM; spawn",
+    "default_job_name": "grouped-e4plus-vllm-v1",
+    "engine_config": {
+      "max_num_seqs": 8,
+      "max_num_batched_tokens": 4096,
+      "gpu_memory_utilization": 0.85,
+      "max_model_len": null,
+      "max_lora_rank": 16,
+      "dtype": "bfloat16",
+      "lora_dtype": "bfloat16",
+      "enforce_eager": false
+    },
+    "context_budget": "Same full-panel maximum prompt length + 8192 for all groups/checkpoints; never truncate",
+    "base_loads": "Once per active group process; five LoRA checkpoints switched via distinct adapter IDs",
+    "base_dtype": "bfloat16",
+    "adapter_compute_dtype": "bfloat16; original FP32 checkpoint files unchanged",
+    "real_cuda_vllm_validated": false,
+    "speed_or_vram_measured": false,
+    "eight_vs_sixteen_benchmark": false,
+    "tests": [
+      "Maximum eight concurrent requests; all raw token IDs, prompts, stop reasons and per-question seeds retained",
+      "Failure/cancellation aborts unfinished requests; completed JSONL records preserved with immediate fsync",
+      "Torn final row backed up; resume only pending questions without duplicates",
+      "No engine construction when all selected questions already complete",
+      "Common context and backend identity across fixed groups; mutated adapters/configs/completed records rejected",
+      "Mock generation exercises full four-group controller, grading/report integration and 960-response merge",
+      "Analysis rejects mixing Transformers and vLLM protocols",
+      "Pinned engine arguments and raw EOS-token output semantics inspected against official v0.11.0 sources"
+    ]
+  },
+  "linux_vllm_offline_tests": {
+    "environment": "Existing WSL Ubuntu; synthetic data and fake AsyncLLM only",
+    "command": "python3 -B -m unittest discover -s tests -p test_vllm_generation.py -q",
+    "passed": 9,
+    "failed": 0,
+    "seconds": 23.643
+  }
 }

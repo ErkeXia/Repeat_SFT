@@ -123,7 +123,7 @@ def lr_for_update(step, base_lr, warmup):
 
 def environment():
     packages = {}
-    for name in ("torch", "transformers", "datasets", "huggingface-hub", "bitsandbytes",
+    for name in ("torch", "transformers", "vllm", "datasets", "huggingface-hub", "bitsandbytes",
                  "accelerate", "peft", "numpy", "safetensors", "math-verify"):
         try:
             packages[name] = importlib.metadata.version(name)
@@ -135,7 +135,7 @@ def environment():
 
 
 def source_files():
-    paths = list(ROOT.glob("*.py")) + list(ROOT.glob("*.md")) + [ROOT / "requirements.txt"]
+    paths = list(ROOT.glob("*.py")) + list(ROOT.glob("*.md")) + list(ROOT.glob("requirements*.txt"))
     for folder in ("recipe", "configs", "tests"):
         paths.extend(p for p in (ROOT / folder).rglob("*") if p.suffix in (".py", ".json", ".md"))
     return sorted(set(p for p in paths if p.is_file()))

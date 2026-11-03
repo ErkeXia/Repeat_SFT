@@ -279,6 +279,14 @@ class SavedAnalysisTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "different prompts/panels/settings"):
             self.analyze("settings")
 
+    def test_mixed_generation_backends_are_rejected(self):
+        path = self.run / "grades-v1" / "grading_manifest.json"
+        manifest = read_json(path)
+        manifest["sources"][-1]["identity"].update(backend="vllm", backend_config={"concurrency": 8})
+        write_json(path, manifest)
+        with self.assertRaisesRegex(ValueError, "different prompts/panels/settings"):
+            self.analyze("mixed-backends")
+
     def test_changed_original_hash_or_frozen_dataset_is_rejected(self):
         raw = self.run / "evaluations" / "generation" / "epoch-002" / "responses.jsonl"
         original = raw.read_bytes()

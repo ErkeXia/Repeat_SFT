@@ -108,6 +108,7 @@ def merge_groups(job, plan):
             members = list(iter_jsonl(path))
             complete = read_json(directory / "complete.json")
             if (identity["selected_ids"] != group["selected_ids"] or identity["epoch"] != epoch
+                    or identity.get("backend", "transformers") != plan.get("generation_backend", "transformers")
                     or identity["run_sha256"] != plan["run_sha256"]
                     or identity["panel_sha256"] != plan["panel_sha256"]
                     or identity["settings"] != plan["settings"]

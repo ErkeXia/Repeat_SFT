@@ -1,0 +1,10 @@
+{
+  "max_num_seqs": 8,
+  "max_num_batched_tokens": 4096,
+  "gpu_memory_utilization": 0.85,
+  "max_model_len": null,
+  "max_lora_rank": 16,
+  "dtype": "bfloat16",
+  "lora_dtype": "bfloat16",
+  "enforce_eager": false
+}

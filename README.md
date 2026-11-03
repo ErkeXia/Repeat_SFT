@@ -4,6 +4,8 @@
 
 从 VM clone 后的完整操作见 **[TODO_VM.md](TODO_VM.md)**。模型下载、数据准备和 GPU 实验均在 VM 执行。默认使用挂载到 `/data` 的 1000G volume，存储根目录为 **`/data/repeat_sft`**。
 
+已训练的 BF16 LoRA 模型可用 **[vLLM 并发 8 评测](VLLM_EVALUATION.md)** 加速自由生成。使用独立环境和新的 `grouped-e4plus-vllm-v1` 目录；训练与拟合仍使用原来的环境和脚本。
+
 ## 能跑哪些实验
 
 | 实验 / 入口 | 使用的数据 | configuration 与执行方式 | 保存的结果 |
@@ -15,6 +17,7 @@
 | 速度对比 `benchmark_train.py` | 同一 400 条训练数据，每组一轮 | batch 1/4 × SDPA/FlashAttention 2，四组均使用 LoRA | 耗时、tokens/s、峰值显存、attention 证据、失败原因；可选 adapter |
 | 拟合评测 `evaluate_loss.py` | 400 train＋200 holdout | 节点 0/1/2/4/8/16/32/64；给定原解答前文预测下一 token | 逐样本 loss、token 准确率、结束符指标、逐 token NPZ |
 | 自由生成 `run_grouped_analysis.sh` | 固定 128 MATH500＋64 GPQA | 四组各 48 题；每组按 64→32→16→8→4 评测，再进入下一组；共 960 条回答 | 每题完整输出、token IDs、长度、停止原因、答案提取、判分和报告 |
+| vLLM 自由生成 `run_grouped_vllm.sh` | 同一固定 192 题面板 | 同样的四组、五节点与 8192 上限；最多 8 题并发，每组复用一个 Base 并切换 LoRA | 同样的逐题结果、续跑、判分与报告；另记引擎版本、BF16 adapter 精度和吞吐日志 |
 | 汇总与复判 `grade.py` / `analyze_run.py` / `export_curves.py` | 已保存结果 | CPU；不重新训练或生成 | 饱和/首次答对/退步/迁移表、早晚排名、可追溯到题目与解答的 HTML |
 
 **MATH500 和 GPQA 都不参与训练。** Holdout 看未见原解答的拟合，MATH500 看独立解题的数学泛化。初始 loss 低只表示 Base 容易模仿该解答，不预设它的短期或长期效果最好。
@@ -49,6 +52,8 @@
 自由生成每题一次采样：temperature=0.6、top-p=0.95、top-k=20，**最多 8,192 个新 token**。到上限停止并标记截断，不伪造 EOS，不把截断算作正常结束。每组 32 道 MATH500＋16 道 GPQA；该组五个节点的生成、判分、报告保存后才进入下一组。生成和判分分离，可修改抽取规则后复判。
 
 新分组任务默认名为 `grouped-e4plus-8192-v1`，可显式传入 `--epochs 4,8,16,32,64`，执行时按降序排列。恢复重跑相同命令，使用已冻结的代码与节点列表，跳过已保存回答；不要加 `--reset-generation`。强制结束时，已完整写盘的题保留，当前未完成题重新生成；不恢复单题的 KV cache。旧任务仍按自己的保存协议续跑；节点列表不同必须另建任务，不能混入旧回答。
+
+vLLM 使用独立入口 `run_grouped_vllm.sh`，默认任务名 `grouped-e4plus-vllm-v1`，并发固定为 8。每个完整回答立即写盘；中断时正在生成的最多 8 题重跑。vLLM 推理明确使用 BF16 adapter，PEFT 路径仍使用 FP32 adapter，原权重文件不改写。后端/版本/精度写入评测身份，不能混合两种后端的回答；已有拟合结果可复用。安装和续跑见 [vLLM 操作说明](VLLM_EVALUATION.md)。
 
 默认自由生成不包含 epoch 0、1、2；八节点拟合结果继续保留。缺少 Base 自由生成时不能判断相对 Base 的正确率提升，缺少 1/2 轮也不能计算完整的 1—4 轮早期排名。需要时在新分组任务用 `--epochs` 显式选择这些节点，或用 `generate.py --epochs 0` 在新目录补测 Base。`run_analysis.sh` 仍可跑全部八个节点的完整面板；该入口按节点执行，不采用四组顺序。
 
