@@ -46,7 +46,8 @@ def candidate(path, fn_name):
     if hasattr(sys, "set_int_max_str_digits"):
         sys.set_int_max_str_digits(50000)
     if fn_name:
-        inputs = [json.loads(line) for line in sys.stdin.read().split("\n")]
+        # One JSON argument per nonblank line; a trailing newline is not an argument.
+        inputs = [json.loads(line) for line in sys.stdin.read().split("\n") if line.strip()]
         with contextlib.redirect_stdout(sys.stderr):
             exec(prelude, namespace)
             exec(compile(code, "solution.py", "exec"), namespace)

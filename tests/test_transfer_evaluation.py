@@ -182,6 +182,38 @@ class ExtractionTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout.strip(), "3")
 
+    def test_real_function_inputs_with_blank_lines_preserve_json_values(self):
+        cases = (
+            ("2\n3", [2, 3]),
+            ("2\n3\n", [2, 3]),  # Exact function self-test input from DockerJudge.preflight.
+            ("2\r\n3\r\n", [2, 3]),
+            ("\n \t\n2\n\n3\n\n", [2, 3]),
+            ('""\n"   "\n0\nfalse\nnull\n[]\n{}\n{"n":[1,2]}\n',
+             ["", "   ", 0, False, None, [], {}, {"n": [1, 2]}]),
+            ("", []),
+        )
+        with tempfile.TemporaryDirectory(dir=TEST_TMP) as temp:
+            path = Path(temp) / "solution.py"
+            path.write_text("class Solution:\n def solve(self, *args): return list(args)", encoding="utf-8")
+            for raw, expected in cases:
+                with self.subTest(input=raw):
+                    result = subprocess.run([sys.executable, "-I", "-B", str(ROOT / "recipe" / "lcb_worker.py"),
+                                             "--candidate", str(path), "solve"],
+                                            input=raw, text=True, capture_output=True, timeout=10)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(json.loads(result.stdout), expected)
+
+    def test_real_function_inputs_reject_malformed_nonempty_lines(self):
+        with tempfile.TemporaryDirectory(dir=TEST_TMP) as temp:
+            path = Path(temp) / "solution.py"
+            path.write_text("class Solution:\n def solve(self, *args): return list(args)", encoding="utf-8")
+            result = subprocess.run([sys.executable, "-I", "-B", str(ROOT / "recipe" / "lcb_worker.py"),
+                                     "--candidate", str(path), "solve"],
+                                    input="2\nnot-json\n3\n", text=True, capture_output=True, timeout=10)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("JSONDecodeError", result.stderr)
+            self.assertEqual(result.stdout, "")
+
     def test_supervisor_requires_all_tests_and_records_first_failure(self):
         cfg = read_json(ROOT / "configs" / "lcb_grading.json")
         cases = [{"split": "public" if i == 0 else "private", "index": i, "input": str(i), "output": str(i+1)} for i in range(3)]
