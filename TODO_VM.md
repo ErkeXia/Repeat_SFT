@@ -251,3 +251,19 @@ python -u benchmark_train.py --out runs/benchmark-lora-s42 --resume
 - [ ] 保留固定 Base commit 的 HF 缓存，或确保以后能下载同版本；adapter 不是独立完整权重。
 - [ ] 定期检查 volume，旧全参模型/历史备份不会自动删除。
 - [ ] 不编辑冻结输入、代码或 marker；改实验配置就创建新 run。
+
+## 11. 可选：准备 BBH / LiveCodeBench 迁移面板
+
+- [ ] 按 [TRANSFER_DATA.md](TRANSFER_DATA.md) 检查 `/data` 至少有约 20 GiB 空闲，使用实际 run 的训练清单检查重合。
+- [ ] 默认新增 BBH 100 道 + LiveCodeBench 100 道，共 200 道；BBH 四类各 25 道。
+
+```bash
+python3 -u -B prepare_transfer_data.py \
+  --train-jsonl runs/random-lora-s42/data/train.jsonl \
+  --out artifacts/transfer-s2026 \
+  --bbh-size 100 --lcb-size 100 --seed 2026
+# 准备中断：同一命令加 --resume；已完成源文件复用，中断所在文件重读。
+```
+
+- [ ] 查看 `summary.json`、`inspection.jsonl`、`selection.jsonl`；保留 `references/` 中原题和测试数据。
+- [ ] 此步只准备数据；现有生成/判分入口仍用于 MATH500 / GPQA。不要替换旧 run 的 `data/panel.jsonl`；后续为新增任务接入独立的生成与执行判分。

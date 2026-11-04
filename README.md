@@ -11,6 +11,7 @@
 | 实验 / 入口 | 使用的数据 | configuration 与执行方式 | 保存的结果 |
 | --- | --- | --- | --- |
 | 数据准备 `prepare_data.py` | Math-CoT-20k、MATH500、GPQA Diamond | 随机 train 400、holdout 200；固定评测 128 道数学＋64 道 GPQA | 题目和原解答全文、候选池、版本、去重记录、监督范围检查 |
+| 新增迁移面板准备 `prepare_transfer_data.py` | BBH 四类逻辑题、LiveCodeBench Lite | 默认各 100 道，共 200 道；BBH 每类 25 道，固定源版本与 seed，检查训练题重合；CPU 流式抽样，可按源文件续跑 | 独立面板、完整原题、代码测试数据、提示词、版本/哈希与选题记录；本入口不包含新任务的生成和判分 |
 | 连通与恢复测试 `smoke_test.py` | train 最短 7 条＋最长 1 条；少量 holdout/评测题 | 同正式 LoRA 配置；8 条×4 轮；比较连续训练与第 13 步崩溃后从第 8 步恢复 | loss、adapter、恢复状态、逐位比较、生成与判分、`SUCCESS.json` |
 | 随机基线 `train.py` | 固定 400 道 Math-CoT 数学题及其完整原解答 | 默认 BF16 LoRA，64 轮，每题一次更新 | 每步日志、每轮耗时/进度、8 个关键 adapter、滚动恢复点 |
 | 初始 loss 分组 `score_pool.py` → `select_groups.py` → `train.py` | 同一候选池；low/mid/high 各 400 条 | 同精度冻结 Base 打分；按来源和解答长度分层匹配；各组从 Base 初始化 LoRA | 初始 loss、选题全文、匹配统计、各组独立训练曲线 |
@@ -22,6 +23,8 @@
 | 生成案例报告 `report_examples.py` | 一个分组任务已有的 MATH500＋GPQA 判分 | 五个 epoch × 截断/未截断 × 判对/判错；每格一条，尽量跨 epoch 复用同一道题 | 20 个位置的独立 HTML、完整回答与 token JSONL、选题 CSV；无候选时明确留空 |
 
 **MATH500 和 GPQA 都不参与训练。** Holdout 看未见原解答的拟合，MATH500 看独立解题的数学泛化。初始 loss 低只表示 Base 容易模仿该解答，不预设它的短期或长期效果最好。
+
+新增 BBH / LiveCodeBench 只用于迁移评测，准备方法、1000G volume 容量估算和续跑命令见 [TRANSFER_DATA.md](TRANSFER_DATA.md)。数据准备不修改旧 run 的固定 192 题面板；新增任务的生成与代码执行判分尚未接入现有评测入口。
 
 ## 默认 configuration
 

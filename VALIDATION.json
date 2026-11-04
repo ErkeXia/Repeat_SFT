@@ -1,11 +1,11 @@
 {
-  "checked_at_utc": "2026-11-04T11:12:53.883454+00:00",
+  "checked_at_utc": "2026-11-04T14:45:27.036388+00:00",
   "project_directory": "D:\\data_recipe_research",
-  "code_sha256": "58f7a8d26e6cacb3ca2a779cf798c029e7868d143390c22655bf6c7d0d32bc47",
+  "code_sha256": "fb73063dbf6f53a9bd98fbb91632d4a44c1f0c3445ba565a14741941059f7d31",
   "offline_unit_tests": {
     "command": "python -B -m unittest discover -s tests -v",
-    "total": 107,
-    "passed": 105,
+    "total": 118,
+    "passed": 116,
     "failed": 0,
     "skipped": [
       [
@@ -17,29 +17,42 @@
         "Linux mount guard; Windows does not have /data mounts"
       ]
     ],
-    "log": ".test_tmp/example-report-regression-serial.log",
-    "dependency_path": ".test_tmp/lora-deps",
-    "seconds": 49.45300000000043,
-    "status": "passed_after_cleanup_retry",
-    "retry_log": ".test_tmp/example-report-cleanup-retry.log",
+    "seconds": 116.375,
+    "log": ".test_tmp\\transfer-data-regression.log",
+    "status": "passed_after_cleanup_retry_and_targeted_revision",
     "initial_run": {
-      "passed": 104,
+      "command": "python -B -m unittest discover -s tests -v",
+      "total": 118,
+      "passed": 115,
+      "failures": [],
       "errors": [
         [
-          "test_eight_in_flight_full_tokens_per_question_seeds_and_no_duplicates (test_vllm_generation.VllmGenerationTests.test_eight_in_flight_full_tokens_per_question_seeds_and_no_duplicates)",
-          "Traceback (most recent call last):\n  File \"D:\\miniconda3\\Lib\\unittest\\async_case.py\", line 99, in _callCleanup\n    self._callMaybeAsync(function, *args, **kwargs)\n  File \"D:\\miniconda3\\Lib\\unittest\\async_case.py\", line 117, in _callMaybeAsync\n    return self._asyncioTestContext.run(func, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\miniconda3\\Lib\\tempfile.py\", line 950, in cleanup\n    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)\n  File \"D:\\miniconda3\\Lib\\tempfile.py\", line 930, in _rmtree\n    _shutil.rmtree(name, onexc=onexc)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 820, in rmtree\n    return _rmtree_unsafe(path, onexc)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 643, in _rmtree_unsafe\n    _rmtree_unsafe(fullname, onexc)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 652, in _rmtree_unsafe\n    onexc(os.rmdir, path, err)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 650, in _rmtree_unsafe\n    os.rmdir(path)\nOSError: [WinError 145] 目录不是空的。: 'D:\\\\data_recipe_research\\\\.test_tmp\\\\tmpbao62lvi\\\\generation'\n"
+          "test_mixed_generation_backends_are_rejected (test_analysis.SavedAnalysisTests.test_mixed_generation_backends_are_rejected)",
+          "Traceback (most recent call last):\n  File \"D:\\miniconda3\\Lib\\tempfile.py\", line 950, in cleanup\n    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)\n  File \"D:\\miniconda3\\Lib\\tempfile.py\", line 930, in _rmtree\n    _shutil.rmtree(name, onexc=onexc)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 820, in rmtree\n    return _rmtree_unsafe(path, onexc)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 643, in _rmtree_unsafe\n    _rmtree_unsafe(fullname, onexc)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 643, in _rmtree_unsafe\n    _rmtree_unsafe(fullname, onexc)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 643, in _rmtree_unsafe\n    _rmtree_unsafe(fullname, onexc)\n  [Previous line repeated 1 more time]\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 652, in _rmtree_unsafe\n    onexc(os.rmdir, path, err)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 650, in _rmtree_unsafe\n    os.rmdir(path)\nOSError: [WinError 145] 目录不是空的。: 'D:\\\\data_recipe_research\\\\.test_tmp\\\\tmp6rnh6wuz\\\\mixed-backends\\\\evidence\\\\responses\\\\epoch-008'\n"
         ]
       ],
-      "note": "Only an existing test temporary-directory cleanup failed with WinError 145; its assertions passed. The test passed on retry."
+      "skipped": [
+        [
+          "test_stage_keeps_lock_after_launcher_is_force_killed (test_grouped_evaluation.GroupedTests.test_stage_keeps_lock_after_launcher_is_force_killed)",
+          "POSIX inherited flock requires Linux"
+        ],
+        [
+          "test_missing_data_mount_is_rejected_without_writes (test_storage_resume.PathTests.test_missing_data_mount_is_rejected_without_writes)",
+          "Linux mount guard; Windows does not have /data mounts"
+        ]
+      ],
+      "seconds": 116.375,
+      "log": ".test_tmp\\transfer-data-regression.log"
     },
-    "earlier_attempt_log": ".test_tmp/example-report-regression.log",
-    "retry_tests": [
-      "test_analysis.SavedAnalysisTests.test_changed_original_hash_or_frozen_dataset_is_rejected",
-      "test_progress.ProgressTests.test_redirected_progress_is_throttled_but_epoch_and_pause_are_shown",
-      "test_vllm_generation.VllmGenerationTests.test_eight_in_flight_full_tokens_per_question_seeds_and_no_duplicates"
-    ]
+    "retry_and_final_changed_module_tests": {
+      "total": 12,
+      "failures": [],
+      "errors": []
+    },
+    "retry_log": ".test_tmp/transfer-data-targeted-final.log",
+    "note": "One unchanged analysis test passed its assertions but hit Windows temporary-directory cleanup WinError 145. It passed separately. After allowing empty public tests and updating scan progress, all 11 new tests and that existing test passed again."
   },
-  "python_syntax_files_checked": 39,
+  "python_syntax_files_checked": 42,
   "cli_help_entrypoints_checked": 5,
   "bash_scripts_checked": 3,
   "documentation_bash_blocks_checked": 31,
@@ -227,5 +240,33 @@
       "Source files and existing report remain byte-identical; CLI works without model dependencies"
     ],
     "vm_results_read": false
+  },
+  "transfer_data": {
+    "default_samples": {
+      "bbh": 100,
+      "livecodebench": 100
+    },
+    "bbh_tasks": 4,
+    "bbh_per_task": 25,
+    "windows_tests": {
+      "total": 11,
+      "passed": 11
+    },
+    "linux_tests": {
+      "command": "wsl -d Ubuntu --cd /mnt/d/data_recipe_research --exec python3 -B -m unittest discover -s tests -p test_transfer_data.py -v",
+      "total": 11,
+      "passed": 11,
+      "seconds": 25.623
+    },
+    "new_document_bash_blocks_checked": 4,
+    "cli_help_checked": true,
+    "live_source_metadata_checked": true,
+    "bbh_source_bytes": 395335,
+    "livecodebench_source_bytes": 4485994821,
+    "local_real_dataset_bodies_downloaded": false,
+    "local_pretrained_models_downloaded": false,
+    "synthetic_interruption_resume_checked": true,
+    "real_vm_full_preparation_run": false,
+    "scope": "Preparation only. Existing generation/grading pipelines remain MATH500/GPQA only."
   }
 }
