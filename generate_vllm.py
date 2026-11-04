@@ -62,7 +62,14 @@ def prepare(args):
             or tokenizer.decode([end_id], skip_special_tokens=False) != "<|im_end|>"):
         raise ValueError("Expected Qwen EOS/chat-end tokens are missing")
     sampling = sampling_options(settings, eos_id, end_id)
-    full_panel = list(iter_jsonl(run / "data" / "panel.jsonl"))
+    panel_directory = artifact_path(args.panel_dir) if getattr(args, "panel_dir", None) else run / "data"
+    panel_identity = {}
+    if getattr(args, "panel_dir", None):
+        from recipe.transfer_eval import load_panel
+        full_panel, _ = load_panel(panel_directory, metadata["data_files"]["train.jsonl"])
+        panel_identity = {"transfer_manifest_sha256": file_hash(panel_directory / "manifest.json")}
+    else:
+        full_panel = list(iter_jsonl(panel_directory / "panel.jsonl"))
     panel = full_panel
     if args.sample_ids:
         if args.limit_per_task is not None:
@@ -73,7 +80,7 @@ def prepare(args):
             raise ValueError("--limit-per-task must be positive")
         panel = [r for task in sorted({r["task"] for r in panel})
                  for r in [x for x in panel if x["task"] == task][:args.limit_per_task]]
-    # Use ALL 192 frozen prompts to choose a common context budget across groups.
+    # Use the entire frozen panel to choose a common context budget across groups.
     # Passing token IDs avoids a second/different chat template inside vLLM.
     prompts = {r["sample_id"]: tokenizer.apply_chat_template(r["messages"], tokenize=True,
                                                            add_generation_prompt=True) for r in full_panel}
@@ -100,7 +107,7 @@ def prepare(args):
         bind_output(out, {"run_sha256": file_hash(run / "run.json"), "epoch": epoch, "checkpoint": marker,
                          "settings": settings, "generation_config": {**sampling, "output_kind": "FINAL_ONLY"},
                          "backend": "vllm", "backend_config": backend_config,
-                         "panel_sha256": file_hash(run / "data" / "panel.jsonl"),
+                         "panel_sha256": file_hash(panel_directory / "panel.jsonl"), **panel_identity,
                          "selected_ids": [r["sample_id"] for r in panel],
                          "seed_policy": "seed + question identity, same at every checkpoint"})
         if not (out / "code").exists():
@@ -179,9 +186,12 @@ def main():
     p.add_argument("--engine-config", default="configs/vllm.json")
     p.add_argument("--out", help="Default RUN/evaluations/generation-vllm; never the Transformers output directory")
     p.add_argument("--sample-ids")
+    p.add_argument("--panel-dir", help="Separate prepared transfer panel; never replaces the run's original panel")
     p.add_argument("--limit-per-task", type=int, help="Optional smoke-only subset; not a concurrency benchmark")
     p.add_argument("--progress-label", default="")
     args = p.parse_args()
+    if args.panel_dir and not args.out:
+        p.error("An external transfer panel requires a separate explicit --out directory")
     configure_vllm_runtime()
     from grouped_evaluation import job_lock
     run = artifact_path(args.run)

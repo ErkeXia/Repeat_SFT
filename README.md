@@ -12,6 +12,7 @@
 | --- | --- | --- | --- |
 | 数据准备 `prepare_data.py` | Math-CoT-20k、MATH500、GPQA Diamond | 随机 train 400、holdout 200；固定评测 128 道数学＋64 道 GPQA | 题目和原解答全文、候选池、版本、去重记录、监督范围检查 |
 | 新增迁移面板准备 `prepare_transfer_data.py` | BBH 四类逻辑题、LiveCodeBench Lite | 默认各 100 道，共 200 道；BBH 每类 25 道，固定源版本与 seed，检查训练题重合；CPU 流式抽样，可按源文件续跑 | 独立面板、完整原题、代码测试数据、提示词、版本/哈希与选题记录；本入口不包含新任务的生成和判分 |
+| 新增迁移评测 `run_transfer_vllm.sh` | 已准备的 BBH 100 + LiveCodeBench 100 | 原 run 的 64→32→16→8→4；四组各 25+25 题；vLLM 并发 8，8192 上限；BBH 精确答案、LCB Docker 执行公开/隐藏测试 | 1000 条完整回答、逐题判分、代码测试详情、正确率/长度/结束/提取指标与逐题轨迹报告；生成和判分均可续跑 |
 | 连通与恢复测试 `smoke_test.py` | train 最短 7 条＋最长 1 条；少量 holdout/评测题 | 同正式 LoRA 配置；8 条×4 轮；比较连续训练与第 13 步崩溃后从第 8 步恢复 | loss、adapter、恢复状态、逐位比较、生成与判分、`SUCCESS.json` |
 | 随机基线 `train.py` | 固定 400 道 Math-CoT 数学题及其完整原解答 | 默认 BF16 LoRA，64 轮，每题一次更新 | 每步日志、每轮耗时/进度、8 个关键 adapter、滚动恢复点 |
 | 补存中间节点 `replay_train.py` | 原 run 冻结的同一 400 条训练数据 | 从原完整 checkpoint 及原训练代码恢复；默认补 6/7/9/10/12/14/20/22/26/30，共 9,200 次更新 | 独立新 run、10 个完整 checkpoint、逐步日志、来源/空间计划；可中断恢复，不比较新旧轨迹 |
@@ -25,7 +26,7 @@
 
 **MATH500 和 GPQA 都不参与训练。** Holdout 看未见原解答的拟合，MATH500 看独立解题的数学泛化。初始 loss 低只表示 Base 容易模仿该解答，不预设它的短期或长期效果最好。
 
-新增 BBH / LiveCodeBench 只用于迁移评测，准备方法、1000G volume 容量估算和续跑命令见 [TRANSFER_DATA.md](TRANSFER_DATA.md)。数据准备不修改旧 run 的固定 192 题面板；新增任务的生成与代码执行判分尚未接入现有评测入口。
+新增 BBH / LiveCodeBench 只用于迁移评测，准备方法和容量估算见 [TRANSFER_DATA.md](TRANSFER_DATA.md)，vLLM 生成、Docker 执行判分和报告见 [TRANSFER_EVALUATION.md](TRANSFER_EVALUATION.md)。新任务独立保存，不修改旧 run 的固定 192 题面板或拟合结果；使用原五个 checkpoint，不使用中间补跑节点。
 
 ## 默认 configuration
 

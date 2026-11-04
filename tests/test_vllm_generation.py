@@ -191,6 +191,29 @@ class VllmPreparationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not a saved training checkpoint"):
             self.prepare(args)
 
+    def test_external_transfer_panel_preserves_original_questions_and_uses_full_context(self):
+        from test_transfer_evaluation import panel_fixture
+        original = file_hash(self.run / "data" / "panel.jsonl")
+        panel_dir = self.root / "transfer-panel"
+        panel = panel_fixture(panel_dir, file_hash(self.run / "data" / "train.jsonl"))
+        args = self.args(self.root / "transfer-output")
+        args.panel_dir = str(panel_dir)
+        prepared = self.prepare(args)
+        self.assertEqual(len(prepared["panel"]), 200)
+        self.assertEqual({p["task"] for p in prepared["panel"]}, {"bbh", "livecodebench"})
+        ids = self.root / "ids.json"
+        write_json(ids, [p["sample_id"] for p in panel[:50]])
+        args = self.args(self.root / "transfer-group", ids)
+        args.panel_dir = str(panel_dir)
+        group = self.prepare(args)
+        self.assertEqual(len(group["panel"]), 50)
+        self.assertEqual(len(group["prompts"]), 200)
+        self.assertEqual(prepared["options"], group["options"])
+        self.assertEqual(file_hash(self.run / "data" / "panel.jsonl"), original)
+        identity = read_json(self.root / "transfer-group" / "epoch-064" / "identity.json")
+        self.assertEqual(identity["panel_sha256"], file_hash(panel_dir / "panel.jsonl"))
+        self.assertEqual(identity["transfer_manifest_sha256"], file_hash(panel_dir / "manifest.json"))
+
 
 class VllmGenerationTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):

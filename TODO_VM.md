@@ -266,7 +266,7 @@ python3 -u -B prepare_transfer_data.py \
 ```
 
 - [ ] 查看 `summary.json`、`inspection.jsonl`、`selection.jsonl`；保留 `references/` 中原题和测试数据。
-- [ ] 此步只准备数据；现有生成/判分入口仍用于 MATH500 / GPQA。不要替换旧 run 的 `data/panel.jsonl`；后续为新增任务接入独立的生成与执行判分。
+- [ ] 此步只准备数据，不替换旧 run 的 `data/panel.jsonl`。生成与判分使用下方第 13 节的独立入口。
 
 ## 12. 可选：补存缺失的中间 epoch
 
@@ -287,3 +287,22 @@ echo "补跑 PID=$!"
 - [ ] 查看新 run 的 `replay_complete.json`；原 trainer 的 64 轮进度不代表补跑任务进度。
 - [ ] 新模型仍用原 192 题面板；文档提供直接 vLLM 生成/判分，以及四组各 48 题的完整路线。
 - [ ] 不比较新旧参数逐位一致；结果明确标记为补跑节点，原训练和评测文件保留。
+
+## 13. 可选：vLLM 评测 BBH / LiveCodeBench
+
+- [ ] 按 [TRANSFER_EVALUATION.md](TRANSFER_EVALUATION.md) 准备 Docker，让当前用户可运行 `docker info`。
+- [ ] 在 VM 运行 `python3 -B build_lcb_sandbox.py`，完成标准输入输出题、函数题、降权与超时终止自检。
+- [ ] 确认第 11 节的面板包含各 100 道题；原 `random-lora-s42` 保留 epoch 4/8/16/32/64。
+
+```bash
+mkdir -p /data/repeat_sft/logs
+nohup bash run_transfer_vllm.sh \
+  --run runs/random-lora-s42 --panel-dir artifacts/transfer-s2026 \
+  --job-name transfer-e4plus-vllm-v1 \
+  >> /data/repeat_sft/logs/transfer-e4plus-vllm-v1.log 2>&1 < /dev/null &
+echo "迁移评测 PID=$!"
+```
+
+- [ ] 四组各 50 题，每组完成原五个节点的生成/判分/报告后再进入下一组；不用先跑拟合 loss。
+- [ ] 中断后重跑同一命令；不加 reset，不换输出目录，已完成题和组保留。
+- [ ] 查看 `runs/random-lora-s42/postprocess/transfer-e4plus-vllm-v1/report/report.html`、`curves.csv` 和逐题 JSON；第一组完成就能先看 `groups/group-001/report/report.html`。

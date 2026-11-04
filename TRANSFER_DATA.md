@@ -2,7 +2,7 @@
 
 `prepare_transfer_data.py` 在 VM 上准备一个**独立的新增评测面板**，默认 BBH 100 道 + LiveCodeBench 100 道，共 200 道。只需 Python 3.10+ 标准库，不用 GPU、不加载模型或 tokenizer、不安装新依赖。
 
-**本次入口只完成数据准备。** 现有 `generate.py`、`generate_vllm.py`、`grade.py` 和分组分析仍只支持原 MATH500 / GPQA 流程；不要把新 `panel.jsonl` 替换进旧 run。BBH 答案包含 A–E、True/False 和 Yes/No；LiveCodeBench 需要执行代码测试，不能沿用 GPQA 选项判分器。后续接入生成与执行判分时应新建评测任务，复用已有 checkpoint，不重新训练。
+**这个入口只完成数据准备。** 数据完成后，使用新增的 [BBH / LiveCodeBench 分组评测](TRANSFER_EVALUATION.md)：`run_transfer_vllm.sh` 复用原 epoch 64/32/16/8/4，四组各 50 题，并发 8；`grade_transfer.py` 单独判分，LiveCodeBench 在 Docker 中运行公开和隐藏测试。不要把新 `panel.jsonl` 替换进旧 run，也不要用原 MATH500 / GPQA 的 `grade.py` 判这两种任务。
 
 ## 容量
 
