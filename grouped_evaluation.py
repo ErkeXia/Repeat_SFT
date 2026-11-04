@@ -17,6 +17,7 @@ from recipe.common import (ROOT, checkpoint_path, environment, file_hash, iter_j
 from recipe.grouped import MAX_NEW_TOKENS, generation_epochs, merge_groups, partition_panel, select_panel, teacher_forcing_files
 from recipe.paths import artifact_path, configure_runtime
 from recipe.resume import verified_code, verify_run_inputs
+from recipe.replay import evaluation_epochs
 from recipe.vllm_generation import validate_config as validate_vllm_config
 
 _child = None
@@ -174,7 +175,7 @@ def prepare_job(run, job, args):
             raise ValueError("vLLM generation requires a BF16 LoRA run; use Transformers for NF4/legacy runs")
         if ft["rank"] > vllm_config["max_lora_rank"]:
             raise ValueError("LoRA rank exceeds vLLM max_lora_rank")
-    fit_epochs = sorted(set(metadata["config"]["checkpoint_epochs"]))
+    fit_epochs = sorted(set(evaluation_epochs(metadata)))
     if not set(gen_epochs).issubset(fit_epochs):
         raise ValueError(f"Requested generation checkpoints are not in this run: {sorted(set(gen_epochs) - set(fit_epochs))}")
     checkpoints = {}

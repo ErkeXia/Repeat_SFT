@@ -15,6 +15,7 @@ from recipe.evaluation import bind_output
 from recipe.grouped import generation_epochs, select_panel
 from recipe.paths import artifact_path, configure_runtime, storage_root
 from recipe.resume import verify_run_inputs
+from recipe.replay import evaluation_epochs
 from recipe.vllm_generation import (VLLM_VERSION, completed_rows, engine_options, generate_epoch,
                                    sampling_options, validate_config)
 
@@ -87,7 +88,7 @@ def prepare(args):
     base = artifact_path(args.out) if args.out else run / "evaluations" / "generation-vllm"
     checkpoints = []
     for epoch in generation_epochs(args.epochs):
-        if epoch not in metadata["config"]["checkpoint_epochs"]:
+        if epoch not in evaluation_epochs(metadata):
             raise ValueError(f"Epoch {epoch} is not a saved training checkpoint")
         ckpt = checkpoint_path(run, epoch)
         marker = read_json(ckpt / "complete.json")

@@ -267,3 +267,23 @@ python3 -u -B prepare_transfer_data.py \
 
 - [ ] 查看 `summary.json`、`inspection.jsonl`、`selection.jsonl`；保留 `references/` 中原题和测试数据。
 - [ ] 此步只准备数据；现有生成/判分入口仍用于 MATH500 / GPQA。不要替换旧 run 的 `data/panel.jsonl`；后续为新增任务接入独立的生成与执行判分。
+
+## 12. 可选：补存缺失的中间 epoch
+
+- [ ] 使用原训练 `.venv`，确认原 run 保留完整恢复状态和代码快照，`/data` 建议至少 10 GiB 空闲。
+- [ ] 按 [REPLAY_CHECKPOINTS.md](REPLAY_CHECKPOINTS.md) 先运行 `--plan-only`，再后台补跑默认 10 个节点。
+
+```bash
+python -B replay_train.py --source-run runs/random-lora-s42 \
+  --out runs/random-lora-s42-intermediate-v1 --plan-only
+mkdir -p /data/repeat_sft/logs
+nohup python -B -u replay_train.py --source-run runs/random-lora-s42 \
+  --out runs/random-lora-s42-intermediate-v1 \
+  >> /data/repeat_sft/logs/random-lora-s42-intermediate-v1.train.log 2>&1 < /dev/null &
+echo "补跑 PID=$!"
+# 中断恢复：改用 --out runs/random-lora-s42-intermediate-v1 --resume。
+```
+
+- [ ] 查看新 run 的 `replay_complete.json`；原 trainer 的 64 轮进度不代表补跑任务进度。
+- [ ] 新模型仍用原 192 题面板；文档提供直接 vLLM 生成/判分，以及四组各 48 题的完整路线。
+- [ ] 不比较新旧参数逐位一致；结果明确标记为补跑节点，原训练和评测文件保留。

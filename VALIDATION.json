@@ -1,11 +1,11 @@
 {
-  "checked_at_utc": "2026-11-04T14:45:27.036388+00:00",
+  "checked_at_utc": "2026-11-04T15:38:49.035233+00:00",
   "project_directory": "D:\\data_recipe_research",
-  "code_sha256": "fb73063dbf6f53a9bd98fbb91632d4a44c1f0c3445ba565a14741941059f7d31",
+  "code_sha256": "64d1d0124c0c19b29909539d5a2d8a144467347ab5e82b0654d43f37c10c4110",
   "offline_unit_tests": {
     "command": "python -B -m unittest discover -s tests -v",
-    "total": 118,
-    "passed": 116,
+    "total": 133,
+    "passed": 129,
     "failed": 0,
     "skipped": [
       [
@@ -13,22 +13,32 @@
         "POSIX inherited flock requires Linux"
       ],
       [
+        "test_force_killed_launcher_keeps_child_lock (test_replay.ReplayTests.test_force_killed_launcher_keeps_child_lock)",
+        "POSIX inherited flock requires Linux"
+      ],
+      [
+        "test_sigterm_saves_child_state_and_frozen_worker_resumes (test_replay.ReplayTests.test_sigterm_saves_child_state_and_frozen_worker_resumes)",
+        "POSIX graceful signal forwarding requires Linux"
+      ],
+      [
         "test_missing_data_mount_is_rejected_without_writes (test_storage_resume.PathTests.test_missing_data_mount_is_rejected_without_writes)",
         "Linux mount guard; Windows does not have /data mounts"
       ]
     ],
-    "seconds": 116.375,
-    "log": ".test_tmp\\transfer-data-regression.log",
-    "status": "passed_after_cleanup_retry_and_targeted_revision",
-    "initial_run": {
-      "command": "python -B -m unittest discover -s tests -v",
-      "total": 118,
-      "passed": 115,
-      "failures": [],
+    "status": "passed_after_targeted_rerun",
+    "initial_full_run": {
+      "total": 133,
+      "passed": 127,
+      "failures": [
+        [
+          "test_vllm_group_barrier_resume_full_merge_and_analysis (test_grouped_evaluation.GroupedTests.test_vllm_group_barrier_resume_full_merge_and_analysis)",
+          "Traceback (most recent call last):\n  File \"D:\\data_recipe_research\\tests\\test_grouped_evaluation.py\", line 257, in test_vllm_group_barrier_resume_full_merge_and_analysis\n    self.check_worker_group_barrier_failure_resume_and_full_reports(\"vllm\")\n  File \"D:\\data_recipe_research\\tests\\test_grouped_evaluation.py\", line 322, in check_worker_group_barrier_failure_resume_and_full_reports\n    self.assertEqual(result.returncode, 0, result.stderr)\nAssertionError: 1 != 0\n"
+        ]
+      ],
       "errors": [
         [
           "test_mixed_generation_backends_are_rejected (test_analysis.SavedAnalysisTests.test_mixed_generation_backends_are_rejected)",
-          "Traceback (most recent call last):\n  File \"D:\\miniconda3\\Lib\\tempfile.py\", line 950, in cleanup\n    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)\n  File \"D:\\miniconda3\\Lib\\tempfile.py\", line 930, in _rmtree\n    _shutil.rmtree(name, onexc=onexc)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 820, in rmtree\n    return _rmtree_unsafe(path, onexc)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 643, in _rmtree_unsafe\n    _rmtree_unsafe(fullname, onexc)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 643, in _rmtree_unsafe\n    _rmtree_unsafe(fullname, onexc)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 643, in _rmtree_unsafe\n    _rmtree_unsafe(fullname, onexc)\n  [Previous line repeated 1 more time]\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 652, in _rmtree_unsafe\n    onexc(os.rmdir, path, err)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 650, in _rmtree_unsafe\n    os.rmdir(path)\nOSError: [WinError 145] 目录不是空的。: 'D:\\\\data_recipe_research\\\\.test_tmp\\\\tmp6rnh6wuz\\\\mixed-backends\\\\evidence\\\\responses\\\\epoch-008'\n"
+          "Traceback (most recent call last):\n  File \"D:\\miniconda3\\Lib\\tempfile.py\", line 950, in cleanup\n    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)\n  File \"D:\\miniconda3\\Lib\\tempfile.py\", line 930, in _rmtree\n    _shutil.rmtree(name, onexc=onexc)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 820, in rmtree\n    return _rmtree_unsafe(path, onexc)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 643, in _rmtree_unsafe\n    _rmtree_unsafe(fullname, onexc)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 643, in _rmtree_unsafe\n    _rmtree_unsafe(fullname, onexc)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 643, in _rmtree_unsafe\n    _rmtree_unsafe(fullname, onexc)\n  [Previous line repeated 1 more time]\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 652, in _rmtree_unsafe\n    onexc(os.rmdir, path, err)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 650, in _rmtree_unsafe\n    os.rmdir(path)\nOSError: [WinError 145] 目录不是空的。: 'D:\\\\data_recipe_research\\\\.test_tmp\\\\tmpqgjaid4u\\\\run\\\\evaluations\\\\teacher_forcing\\\\epoch-008'\n"
         ]
       ],
       "skipped": [
@@ -37,22 +47,30 @@
           "POSIX inherited flock requires Linux"
         ],
         [
+          "test_force_killed_launcher_keeps_child_lock (test_replay.ReplayTests.test_force_killed_launcher_keeps_child_lock)",
+          "POSIX inherited flock requires Linux"
+        ],
+        [
+          "test_sigterm_saves_child_state_and_frozen_worker_resumes (test_replay.ReplayTests.test_sigterm_saves_child_state_and_frozen_worker_resumes)",
+          "POSIX graceful signal forwarding requires Linux"
+        ],
+        [
           "test_missing_data_mount_is_rejected_without_writes (test_storage_resume.PathTests.test_missing_data_mount_is_rejected_without_writes)",
           "Linux mount guard; Windows does not have /data mounts"
         ]
       ],
-      "seconds": 116.375,
-      "log": ".test_tmp\\transfer-data-regression.log"
+      "seconds": 64.967,
+      "log": ".test_tmp\\replay-final-suite.log"
     },
-    "retry_and_final_changed_module_tests": {
-      "total": 12,
+    "retry": {
+      "total": 2,
       "failures": [],
       "errors": []
     },
-    "retry_log": ".test_tmp/transfer-data-targeted-final.log",
-    "note": "One unchanged analysis test passed its assertions but hit Windows temporary-directory cleanup WinError 145. It passed separately. After allowing empty public tests and updating scan progress, all 11 new tests and that existing test passed again."
+    "retry_log": ".test_tmp/replay-final-retry.log",
+    "note": "Full run: 127 passed, 4 POSIX-only skips, one existing analysis cleanup WinError 145 and one existing grouped vLLM bootstrap subprocess failure with empty stderr. Both tests passed in isolation without product code changes. Initial failure evidence is retained; the full run was not clean on first execution."
   },
-  "python_syntax_files_checked": 42,
+  "python_syntax_files_checked": 45,
   "cli_help_entrypoints_checked": 5,
   "bash_scripts_checked": 3,
   "documentation_bash_blocks_checked": 31,
@@ -268,5 +286,63 @@
     "synthetic_interruption_resume_checked": true,
     "real_vm_full_preparation_run": false,
     "scope": "Preparation only. Existing generation/grading pipelines remain MATH500/GPQA only."
+  },
+  "replay_checkpoints": {
+    "entrypoint": "replay_train.py",
+    "documentation": "REPLAY_CHECKPOINTS.md",
+    "target_epochs": [
+      6,
+      7,
+      9,
+      10,
+      12,
+      14,
+      20,
+      22,
+      26,
+      30
+    ],
+    "default_anchors": [
+      4,
+      8,
+      16
+    ],
+    "training_updates": 9200,
+    "original_training_loop_modified": false,
+    "original_run_mutated": false,
+    "model_trajectory_comparison": false,
+    "uses_original_frozen_training_code": true,
+    "optimizer_scheduler_rng_cursor_preserved_without_retagging": true,
+    "output": "Independent replay run; original config identity retained, separate replay node list for evaluation",
+    "windows_targeted_tests": {
+      "total": 16,
+      "passed": 14,
+      "skipped": 2,
+      "log": ".test_tmp/replay-targeted-final.log"
+    },
+    "linux_tests": {
+      "standard_library_synthetic_tests": 12,
+      "passed": 12,
+      "seconds": 166.574,
+      "sigterm_resume_test": {
+        "passed": 1,
+        "seconds": 18.585
+      },
+      "note": "After reproducing a nested Popen.wait signal-handler deadlock, forwarding was changed to nonblocking notification and the real SIGTERM -> saved cursor -> resume subprocess test passed."
+    },
+    "selected_documentation_bash_blocks_checked": 23,
+    "selected_documentation": [
+      "REPLAY_CHECKPOINTS.md",
+      "README.md",
+      "TODO_VM.md"
+    ],
+    "cli_help_checked": true,
+    "source_and_existing_checkpoints_preserved": true,
+    "interruption_and_noop_resume_checked": true,
+    "linux_orphan_writer_lock_checked": true,
+    "vllm_and_grouped_new_epoch_selection_checked": true,
+    "local_pretrained_weights_or_real_datasets_downloaded": false,
+    "real_vm_gpu_replay_executed": false,
+    "storage_estimate": "About 2 GiB for 10 full rank-16 adapter checkpoints; 3-5 GiB with anchors/recovery; recommend 10 GiB free. --plan-only estimates from actual source checkpoint bytes."
   }
 }

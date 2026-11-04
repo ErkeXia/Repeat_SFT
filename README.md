@@ -14,6 +14,7 @@
 | 新增迁移面板准备 `prepare_transfer_data.py` | BBH 四类逻辑题、LiveCodeBench Lite | 默认各 100 道，共 200 道；BBH 每类 25 道，固定源版本与 seed，检查训练题重合；CPU 流式抽样，可按源文件续跑 | 独立面板、完整原题、代码测试数据、提示词、版本/哈希与选题记录；本入口不包含新任务的生成和判分 |
 | 连通与恢复测试 `smoke_test.py` | train 最短 7 条＋最长 1 条；少量 holdout/评测题 | 同正式 LoRA 配置；8 条×4 轮；比较连续训练与第 13 步崩溃后从第 8 步恢复 | loss、adapter、恢复状态、逐位比较、生成与判分、`SUCCESS.json` |
 | 随机基线 `train.py` | 固定 400 道 Math-CoT 数学题及其完整原解答 | 默认 BF16 LoRA，64 轮，每题一次更新 | 每步日志、每轮耗时/进度、8 个关键 adapter、滚动恢复点 |
+| 补存中间节点 `replay_train.py` | 原 run 冻结的同一 400 条训练数据 | 从原完整 checkpoint 及原训练代码恢复；默认补 6/7/9/10/12/14/20/22/26/30，共 9,200 次更新 | 独立新 run、10 个完整 checkpoint、逐步日志、来源/空间计划；可中断恢复，不比较新旧轨迹 |
 | 初始 loss 分组 `score_pool.py` → `select_groups.py` → `train.py` | 同一候选池；low/mid/high 各 400 条 | 同精度冻结 Base 打分；按来源和解答长度分层匹配；各组从 Base 初始化 LoRA | 初始 loss、选题全文、匹配统计、各组独立训练曲线 |
 | 速度对比 `benchmark_train.py` | 同一 400 条训练数据，每组一轮 | batch 1/4 × SDPA/FlashAttention 2，四组均使用 LoRA | 耗时、tokens/s、峰值显存、attention 证据、失败原因；可选 adapter |
 | 拟合评测 `evaluate_loss.py` | 400 train＋200 holdout | 节点 0/1/2/4/8/16/32/64；给定原解答前文预测下一 token | 逐样本 loss、token 准确率、结束符指标、逐 token NPZ |
@@ -79,6 +80,8 @@ vLLM 使用独立入口 `run_grouped_vllm.sh`，默认任务名 `grouped-e4plus-
 新检查点包含 `adapter_model.safetensors`、`adapter_config.json`、`recipe_model.json`、tokenizer 和 `complete.json`；正式训练还保存 `training_state.pt`（优化器、学习率、随机状态、数据位置）。**adapter 不是独立完整模型**：推理需要记录的 Base commit 加该节点 adapter，项目评测自动处理。epoch 0 的零增量 adapter 表示同精度的原始 Base。
 
 恢复核验权重哈希、代码、数据、tokenizer 和配置。Ctrl+C / SIGTERM 在当前更新后保存；断电或 kill -9 回到最近完整恢复点。恢复追加 attempt，关键节点不覆盖。git pull 后源代码变化，使用 run 内原始代码快照恢复，见 TODO。
+
+需要补看 epoch 6/7/9/10/12/14/20/22/26/30 时，使用 [独立补跑说明](REPLAY_CHECKPOINTS.md)。默认从原 epoch 4、8、16 分三段恢复到 7、14、30，新节点放到 `random-lora-s42-intermediate-v1`；原 run 完整保留。预计新增约 3–5 GiB，建议至少 10 GiB 空闲，`--plan-only` 按实际 checkpoint 大小估算。新节点可用现有拟合、vLLM 和四组评测入口，节点列表需显式传入。
 
 相对的 `runs/...`、`artifacts/...` 指向 **`/data/repeat_sft`，不是 clone 目录**；缓存/临时文件默认也在 volume。1000G 通常足以容纳这批 LoRA 实验，旧全参权重、重复缓存和历史生成备份仍占空间。新节点不重复保存完整 Base，备份时保留 Base 缓存/固定版本信息与全部 adapter。
 

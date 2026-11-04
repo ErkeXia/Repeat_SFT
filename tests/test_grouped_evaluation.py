@@ -128,6 +128,29 @@ class GroupedTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             select_panel(self.panel, [ids[0], ids[0]])
 
+    def test_replay_uses_new_nodes_for_fitting_and_grouped_generation(self):
+        import shutil
+        metadata = read_json(self.run / "run.json")
+        original_config = metadata["config"].copy()
+        metadata["replay"] = {"target_epochs": [6, 7]}
+        write_json(self.run / "run.json", metadata)
+        for old, epoch in ((4, 6), (8, 7)):
+            directory = self.source / f"epoch-{epoch:03d}"
+            shutil.copytree(self.source / f"epoch-{old:03d}", directory)
+            identity = read_json(directory / "identity.json")
+            identity["epoch"] = epoch
+            identity["run_sha256"] = file_hash(self.run / "run.json")
+            identity["checkpoint"]["step"] = epoch
+            write_json(directory / "identity.json", identity)
+            write_json(self.run / "checkpoints" / f"epoch-{epoch:03d}" / "complete.json", identity["checkpoint"])
+        job = self.run / "postprocess" / "replay-eval"
+        job.mkdir()
+        plan = pipeline.prepare_job(self.run, job, args(epochs="6,7", teacher_forcing=str(self.source)))
+        self.assertEqual(plan["generation_epochs"], [7, 6])
+        self.assertEqual(plan["fit_epochs"], [6, 7])
+        self.assertEqual(len(plan["groups"]), 4)
+        self.assertEqual(read_json(self.run / "run.json")["config"], original_config)
+
     def test_replace_archives_generation_preserves_every_fitting_file(self):
         before = hashes(self.source)
         write_json(self.job / "generation" / "epoch-001" / "old.json", {"old": True})

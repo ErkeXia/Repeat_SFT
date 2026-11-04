@@ -171,6 +171,26 @@ class VllmPreparationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Adapter checkpoint changed"):
             self.prepare(self.args(self.root / "changed-adapter"))
 
+    def test_replay_nodes_are_accepted_without_rewriting_training_configuration(self):
+        import shutil
+        metadata = read_json(self.run / "run.json")
+        frozen_config = deepcopy(metadata["config"])
+        metadata["replay"] = {"target_epochs": [6, 7]}
+        write_json(self.run / "run.json", metadata)
+        ckpt = self.run / "checkpoints" / "epoch-006"
+        shutil.copytree(self.ckpt, ckpt)
+        marker = read_json(ckpt / "complete.json")
+        marker["step"] = 6
+        write_json(ckpt / "complete.json", marker)
+        args = self.args(self.root / "replay-generation")
+        args.epochs = "6"
+        prepared = self.prepare(args)
+        self.assertEqual([item["epoch"] for item in prepared["checkpoints"]], [6])
+        self.assertEqual(read_json(self.run / "run.json")["config"], frozen_config)
+        args.epochs = "64"
+        with self.assertRaisesRegex(ValueError, "not a saved training checkpoint"):
+            self.prepare(args)
+
 
 class VllmGenerationTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
