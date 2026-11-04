@@ -169,6 +169,8 @@ nohup bash run_analysis.sh runs/random-lora-s42 full-v1 \
 
 ## 7. 查看与重新判分
 
+- [ ] 如需五个 epoch × 四种截断/判分情况的案例报告，按 [EXAMPLE_REPORT.md](EXAMPLE_REPORT.md) 运行 `report_examples.py`；下载生成的 `report.html` 查看。只需要 Python 标准库，报告输出使用新目录；某类没有样本会明确留空。
+
 - [ ] 第一组完成可看该组报告；全部完成后看总报告。
 - [ ] 同时看正确率、长度、正常结束率、答案提取率，点开具体解答核查。
 

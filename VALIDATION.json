@@ -1,11 +1,11 @@
 {
-  "checked_at_utc": "2026-11-03T11:47:29.053762+00:00",
+  "checked_at_utc": "2026-11-04T11:12:53.883454+00:00",
   "project_directory": "D:\\data_recipe_research",
-  "code_sha256": "7e8a2c668d7e08bc34ba0e1dca481848075f03deb82e0503f3ea99123bd22454",
+  "code_sha256": "58f7a8d26e6cacb3ca2a779cf798c029e7868d143390c22655bf6c7d0d32bc47",
   "offline_unit_tests": {
     "command": "python -B -m unittest discover -s tests -v",
-    "total": 98,
-    "passed": 96,
+    "total": 107,
+    "passed": 105,
     "failed": 0,
     "skipped": [
       [
@@ -17,14 +17,32 @@
         "Linux mount guard; Windows does not have /data mounts"
       ]
     ],
-    "log": ".test_tmp/vllm-tests.log",
+    "log": ".test_tmp/example-report-regression-serial.log",
     "dependency_path": ".test_tmp/lora-deps",
-    "seconds": 50.812999999994645
+    "seconds": 49.45300000000043,
+    "status": "passed_after_cleanup_retry",
+    "retry_log": ".test_tmp/example-report-cleanup-retry.log",
+    "initial_run": {
+      "passed": 104,
+      "errors": [
+        [
+          "test_eight_in_flight_full_tokens_per_question_seeds_and_no_duplicates (test_vllm_generation.VllmGenerationTests.test_eight_in_flight_full_tokens_per_question_seeds_and_no_duplicates)",
+          "Traceback (most recent call last):\n  File \"D:\\miniconda3\\Lib\\unittest\\async_case.py\", line 99, in _callCleanup\n    self._callMaybeAsync(function, *args, **kwargs)\n  File \"D:\\miniconda3\\Lib\\unittest\\async_case.py\", line 117, in _callMaybeAsync\n    return self._asyncioTestContext.run(func, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\miniconda3\\Lib\\tempfile.py\", line 950, in cleanup\n    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)\n  File \"D:\\miniconda3\\Lib\\tempfile.py\", line 930, in _rmtree\n    _shutil.rmtree(name, onexc=onexc)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 820, in rmtree\n    return _rmtree_unsafe(path, onexc)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 643, in _rmtree_unsafe\n    _rmtree_unsafe(fullname, onexc)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 652, in _rmtree_unsafe\n    onexc(os.rmdir, path, err)\n  File \"D:\\miniconda3\\Lib\\shutil.py\", line 650, in _rmtree_unsafe\n    os.rmdir(path)\nOSError: [WinError 145] 目录不是空的。: 'D:\\\\data_recipe_research\\\\.test_tmp\\\\tmpbao62lvi\\\\generation'\n"
+        ]
+      ],
+      "note": "Only an existing test temporary-directory cleanup failed with WinError 145; its assertions passed. The test passed on retry."
+    },
+    "earlier_attempt_log": ".test_tmp/example-report-regression.log",
+    "retry_tests": [
+      "test_analysis.SavedAnalysisTests.test_changed_original_hash_or_frozen_dataset_is_rejected",
+      "test_progress.ProgressTests.test_redirected_progress_is_throttled_but_epoch_and_pause_are_shown",
+      "test_vllm_generation.VllmGenerationTests.test_eight_in_flight_full_tokens_per_question_seeds_and_no_duplicates"
+    ]
   },
-  "python_syntax_files_checked": 37,
-  "cli_help_entrypoints_checked": 4,
+  "python_syntax_files_checked": 39,
+  "cli_help_entrypoints_checked": 5,
   "bash_scripts_checked": 3,
-  "documentation_bash_blocks_checked": 30,
+  "documentation_bash_blocks_checked": 31,
   "utf8_documentation_and_local_links": "passed",
   "git_diff_check": "passed",
   "local_torch": "2.6.0+cpu",
@@ -97,13 +115,15 @@
   },
   "notes": [
     "Only synthetic data and tiny randomly initialized models used in local tests; no pretrained weights or full datasets downloaded.",
-    "Windows regression suite: 96 passed, 2 Linux-only tests skipped. Linux inherited-flock test plus 9 vLLM mock tests separately passed under existing WSL Ubuntu.",
     "No real vLLM installation, CUDA kernels, GPU generation, throughput or VRAM measured locally; VM validation remains necessary.",
     "Training settings and teacher-forcing evaluation unchanged. vLLM uses a separate environment and new result directory; fitting evidence is reused.",
     "Completed answers survive interruption. Up to eight unfinished questions restart; no mid-question KV cache resume or cross-backend/batch-invariant bitwise guarantee.",
     "Use a new job name and the validated repaired teacher-forcing source if original fitting files contain duplicates.",
-    "README, VM TODO, grouped evaluation and analysis documentation updated; VLLM_EVALUATION.md includes install, nohup launch and resume.",
-    "No VM files, commits, pushes or remote repository state changed. No concurrency 8-vs-16 benchmark added."
+    "No VM files, commits, pushes or remote repository state changed. No concurrency 8-vs-16 benchmark added.",
+    "Current suite: 107 tests, 105 pass after retry, 2 platform skips. Windows WinError 145 affected old-test temporary-directory cleanup; the affected tests all passed on individual rerun. No existing training/generation/test code changed.",
+    "Nine new report tests passed on Windows and separately under Linux/WSL, including the actual command-line entrypoint.",
+    "Example report uses saved grades only; no real VM results were accessed locally. Output includes twenty slots and explicitly identifies unavailable categories.",
+    "README, TODO_VM, VLLM_EVALUATION and EXAMPLE_REPORT instructions updated. No commits, pushes or VM changes performed."
   ],
   "linux_lock_test": {
     "environment": "Existing WSL Ubuntu, no new downloads",
@@ -114,6 +134,7 @@
     "checks": "SIGKILL launcher; live stage still holds flock; lock released after stage exits"
   },
   "cli_help_entrypoints": [
+    "report_examples.py",
     "generate_vllm.py",
     "grouped_evaluation.py",
     "generate.py",
@@ -124,7 +145,8 @@
     "TODO_VM.md",
     "GROUPED_EVALUATION.md",
     "VLLM_EVALUATION.md",
-    "ANALYSIS.md"
+    "ANALYSIS.md",
+    "EXAMPLE_REPORT.md"
   ],
   "pinned_engine_options_api_checked": true,
   "vllm_evaluation": {
@@ -167,5 +189,43 @@
     "passed": 9,
     "failed": 0,
     "seconds": 23.643
+  },
+  "example_report": {
+    "entrypoint": "report_examples.py",
+    "documentation": "EXAMPLE_REPORT.md",
+    "requires": "Python standard library only; no GPU/model/data downloads",
+    "epochs": [
+      4,
+      8,
+      16,
+      32,
+      64
+    ],
+    "slots": 20,
+    "length_field": "length_truncated",
+    "selection": "Deterministic greedy cross-epoch same-question reuse, seed=42; no optimality claim",
+    "output": "Self-contained HTML + complete selected question/graded answer/token JSONL + CSV + provenance/code",
+    "missing_categories": "Explicit empty slots; unknown grading never classified as incorrect",
+    "input_coverage": "Saved full-panel grades preferred, otherwise completed group grades including retry directories; partial coverage labeled",
+    "source_mutation": "No writes to inputs; fresh output directory required",
+    "windows_report_tests_passed": 9,
+    "linux_report_tests": {
+      "environment": "Existing WSL Ubuntu, Python standard library only",
+      "command": "python3 -B -m unittest discover -s tests -p test_report_examples.py -q",
+      "passed": 9,
+      "failed": 0,
+      "seconds": 48.009
+    },
+    "validated": [
+      "Twenty correctly classified examples using four recurring questions when available",
+      "All-truncated input gives ten genuine examples and ten explicit empty slots",
+      "Cross-category question trajectories and deterministic selection independent of row order",
+      "Partial panels, unknown/error grades, EOS exactly at cap",
+      "Retry-directory detection and full/group deduplication by choosing one authoritative input set",
+      "Reject changed raw answers, duplicate records and mixed grading protocols",
+      "Entire raw response survives HTML escaping and appears last in each example; all token IDs retained in JSONL",
+      "Source files and existing report remain byte-identical; CLI works without model dependencies"
+    ],
+    "vm_results_read": false
   }
 }

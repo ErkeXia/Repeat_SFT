@@ -111,6 +111,8 @@ kill -TERM "$(cat /data/repeat_sft/logs/random-lora-s42.vllm.pid)"
 
 下载整个成功的 `analysis` 目录，用浏览器打开 `report.html`。旧 Transformers 的生成目录仍可独立查看，但不能与 vLLM 混成同一训练曲线。仅从 epoch 4 开始观测，不能把首次观测答对解释成恰好第 4 轮才学会；没有 Base 生成对照时不报告相对 Base 的提升。
 
+需要检查具体长回答时，可另运行 [report_examples.py](EXAMPLE_REPORT.md)，生成五个 epoch、四类截断/判分情况的案例报告；跨 epoch 尽量复用同一道题。它只读已保存判分，不影响正在生成的任务。
+
 ## 实现与验证范围
 
 入口是 `generate_vllm.py`、`run_grouped_vllm.sh`；请求调度、停止校验和续跑在 `recipe/vllm_generation.py`。引擎配置是 `configs/vllm.json`，分组控制器通过 `--backend vllm` 选择。

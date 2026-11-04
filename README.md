@@ -19,6 +19,7 @@
 | 自由生成 `run_grouped_analysis.sh` | 固定 128 MATH500＋64 GPQA | 四组各 48 题；每组按 64→32→16→8→4 评测，再进入下一组；共 960 条回答 | 每题完整输出、token IDs、长度、停止原因、答案提取、判分和报告 |
 | vLLM 自由生成 `run_grouped_vllm.sh` | 同一固定 192 题面板 | 同样的四组、五节点与 8192 上限；最多 8 题并发，每组复用一个 Base 并切换 LoRA | 同样的逐题结果、续跑、判分与报告；另记引擎版本、BF16 adapter 精度和吞吐日志 |
 | 汇总与复判 `grade.py` / `analyze_run.py` / `export_curves.py` | 已保存结果 | CPU；不重新训练或生成 | 饱和/首次答对/退步/迁移表、早晚排名、可追溯到题目与解答的 HTML |
+| 生成案例报告 `report_examples.py` | 一个分组任务已有的 MATH500＋GPQA 判分 | 五个 epoch × 截断/未截断 × 判对/判错；每格一条，尽量跨 epoch 复用同一道题 | 20 个位置的独立 HTML、完整回答与 token JSONL、选题 CSV；无候选时明确留空 |
 
 **MATH500 和 GPQA 都不参与训练。** Holdout 看未见原解答的拟合，MATH500 看独立解题的数学泛化。初始 loss 低只表示 Base 容易模仿该解答，不预设它的短期或长期效果最好。
 
@@ -67,6 +68,8 @@ vLLM 使用独立入口 `run_grouped_vllm.sh`，默认任务名 `grouped-e4plus-
 | 数据组早晚排名 | `export_curves.py` 的 `early_late_rankings.csv` |
 
 “首次答对”是首次**观测**答对的检查点，无法定位未评测的中间 epoch。饱和依赖容差；高 loss 稳定不等于记住。正常结束率与正确率共同提升是相关性，不直接代表因果。小面板、单次采样用于探索，排名交叉须换抽样/训练 seed 复现。详细定义见 [ANALYSIS.md](ANALYSIS.md)。
+
+想逐条检查“答对但仍生成到上限”等现象，使用 [生成案例报告](EXAMPLE_REPORT.md)：每个 epoch 四类各取一条，完整回答放在该案例最后展示。脚本只读已有判分，不使用 GPU；至少一组判分完成即可生成明确标注覆盖情况的快照。
 
 ## 检查点、恢复和存储
 
