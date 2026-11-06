@@ -87,6 +87,8 @@ runs/random-lora-s42-intermediate-v1/
 
 ## 测试新节点的正确率
 
+现在可以用 **[run_intermediate_vllm.sh 四任务入口](INTERMEDIATE_EVALUATION.md)** 评测 MATH500、GPQA、BBH、LiveCodeBench：复用已有题目，两个面板各自分四组（每组 48/50 题），默认读取该 replay run 的全部新节点。该入口不要求先算拟合，逐题保存并支持恢复。下面保留的是只评测原 MATH500/GPQA 面板的两种已有路线；按需要选择一个入口，避免重复生成。
+
 新 run 复制了原来的固定 **128 道 MATH500 + 64 道 GPQA**；使用新 run 路径即可。推理仍为并发 8、最多 8,192 新 token、temperature=0.6、top-p=0.95、top-k=20，前提是使用原来的 `configs/generation.json` / `configs/vllm.json`。
 
 只想先看正确率，不必先算拟合：训练完成后运行以下命令。每次启动前确保没有另一个生成进程在写同一目录。顺序为 30→26→22→20→14→12→10→9→7→6，每个节点评测全部 192 题；共 1,920 条回答。

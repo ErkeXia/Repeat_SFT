@@ -13,6 +13,7 @@
 | 数据准备 `prepare_data.py` | Math-CoT-20k、MATH500、GPQA Diamond | 随机 train 400、holdout 200；固定评测 128 道数学＋64 道 GPQA | 题目和原解答全文、候选池、版本、去重记录、监督范围检查 |
 | 新增迁移面板准备 `prepare_transfer_data.py` | BBH 四类逻辑题、LiveCodeBench Lite | 默认各 100 道，共 200 道；BBH 每类 25 道，固定源版本与 seed，检查训练题重合；CPU 流式抽样，可按源文件续跑 | 独立面板、完整原题、代码测试数据、提示词、版本/哈希与选题记录；本入口不包含新任务的生成和判分 |
 | 新增迁移评测 `run_transfer_vllm.sh` | 已准备的 BBH 100 + LiveCodeBench 100 | 原 run 的 64→32→16→8→4；四组各 25+25 题；vLLM 并发 8，8192 上限；BBH 精确答案、LCB Docker 执行公开/隐藏测试 | 1000 条完整回答、逐题判分、代码测试详情、正确率/长度/结束/提取指标与逐题轨迹报告；生成和判分均可续跑 |
+| 新节点四任务评测 `run_intermediate_vllm.sh` | 原固定 MATH500 128＋GPQA 64＋BBH 100＋LiveCodeBench 100 | 补跑 run 的十个新节点降序；两个面板分别四组（48/50 题），vLLM 并发 8、8192 上限，不要求先做拟合 | 3920 条完整回答、判分、两套面板曲线和逐题报告；逐题续跑，独立目录 |
 | 连通与恢复测试 `smoke_test.py` | train 最短 7 条＋最长 1 条；少量 holdout/评测题 | 同正式 LoRA 配置；8 条×4 轮；比较连续训练与第 13 步崩溃后从第 8 步恢复 | loss、adapter、恢复状态、逐位比较、生成与判分、`SUCCESS.json` |
 | 随机基线 `train.py` | 固定 400 道 Math-CoT 数学题及其完整原解答 | 默认 BF16 LoRA，64 轮，每题一次更新 | 每步日志、每轮耗时/进度、8 个关键 adapter、滚动恢复点 |
 | 补存中间节点 `replay_train.py` | 原 run 冻结的同一 400 条训练数据 | 从原完整 checkpoint 及原训练代码恢复；默认补 6/7/9/10/12/14/20/22/26/30，共 9,200 次更新 | 独立新 run、10 个完整 checkpoint、逐步日志、来源/空间计划；可中断恢复，不比较新旧轨迹 |
@@ -23,6 +24,7 @@
 | vLLM 自由生成 `run_grouped_vllm.sh` | 同一固定 192 题面板 | 同样的四组、五节点与 8192 上限；最多 8 题并发，每组复用一个 Base 并切换 LoRA | 同样的逐题结果、续跑、判分与报告；另记引擎版本、BF16 adapter 精度和吞吐日志 |
 | 汇总与复判 `grade.py` / `analyze_run.py` / `export_curves.py` | 已保存结果 | CPU；不重新训练或生成 | 饱和/首次答对/退步/迁移表、早晚排名、可追溯到题目与解答的 HTML |
 | 生成案例报告 `report_examples.py` | 一个分组任务已有的 MATH500＋GPQA 判分 | 五个 epoch × 截断/未截断 × 判对/判错；每格一条，尽量跨 epoch 复用同一道题 | 20 个位置的独立 HTML、完整回答与 token JSONL、选题 CSV；无候选时明确留空 |
+| 退化案例分析 `analyze_regressions.py` | 已保存的 MATH500、GPQA、BBH、LiveCodeBench 判分 | CPU；各评测按实际有效节点比较，缺失/异常不算答错，不混合生成与判分协议 | 退化区间、恢复节点、配对 lost/gained、输出行为线索、前后完整回答 HTML 和 token/判分 JSON |
 
 **MATH500 和 GPQA 都不参与训练。** Holdout 看未见原解答的拟合，MATH500 看独立解题的数学泛化。初始 loss 低只表示 Base 容易模仿该解答，不预设它的短期或长期效果最好。
 
@@ -76,6 +78,8 @@ vLLM 使用独立入口 `run_grouped_vllm.sh`，默认任务名 `grouped-e4plus-
 
 想逐条检查“答对但仍生成到上限”等现象，使用 [生成案例报告](EXAMPLE_REPORT.md)：每个 epoch 四类各取一条，完整回答放在该案例最后展示。脚本只读已有判分，不使用 GPU；至少一组判分完成即可生成明确标注覆盖情况的快照。
 
+重点检查“原来答对、后来答错”时，使用 [退化分析说明](REGRESSION_ANALYSIS.md)。`python -B analyze_regressions.py --run runs/random-lora-s42 --out runs/random-lora-s42/analysis-regressions-v1` 会发现现有评测任务，保留各数据集实际节点的覆盖信息，生成逐题完整对照；可以在迁移评测尚未全部结束时先分析已完成的判分。
+
 ## 检查点、恢复和存储
 
 新检查点包含 `adapter_model.safetensors`、`adapter_config.json`、`recipe_model.json`、tokenizer 和 `complete.json`；正式训练还保存 `training_state.pt`（优化器、学习率、随机状态、数据位置）。**adapter 不是独立完整模型**：推理需要记录的 Base commit 加该节点 adapter，项目评测自动处理。epoch 0 的零增量 adapter 表示同精度的原始 Base。
@@ -83,6 +87,8 @@ vLLM 使用独立入口 `run_grouped_vllm.sh`，默认任务名 `grouped-e4plus-
 恢复核验权重哈希、代码、数据、tokenizer 和配置。Ctrl+C / SIGTERM 在当前更新后保存；断电或 kill -9 回到最近完整恢复点。恢复追加 attempt，关键节点不覆盖。git pull 后源代码变化，使用 run 内原始代码快照恢复，见 TODO。
 
 需要补看 epoch 6/7/9/10/12/14/20/22/26/30 时，使用 [独立补跑说明](REPLAY_CHECKPOINTS.md)。默认从原 epoch 4、8、16 分三段恢复到 7、14、30，新节点放到 `random-lora-s42-intermediate-v1`；原 run 完整保留。预计新增约 3–5 GiB，建议至少 10 GiB 空闲，`--plan-only` 按实际 checkpoint 大小估算。新节点可用现有拟合、vLLM 和四组评测入口，节点列表需显式传入。
+
+同时评测这些新节点的 MATH500、GPQA、BBH 和 LiveCodeBench 时，使用 [新节点四任务入口](INTERMEDIATE_EVALUATION.md)：先完成 MATH500/GPQA 的四组各 48 题，再完成 BBH/LCB 的四组各 50 题；每组十节点全部完成再继续，不需要先补算 teacher-forcing loss。
 
 相对的 `runs/...`、`artifacts/...` 指向 **`/data/repeat_sft`，不是 clone 目录**；缓存/临时文件默认也在 volume。1000G 通常足以容纳这批 LoRA 实验，旧全参权重、重复缓存和历史生成备份仍占空间。新节点不重复保存完整 Base，备份时保留 Base 缓存/固定版本信息与全部 adapter。
 

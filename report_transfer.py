@@ -68,7 +68,9 @@ def report(panel_dir, grades, out, selected_ids=None):
         write_json(out / "questions" / f"{sid}.json", {"question": question, "milestones": event, "answers": rows})
         reference = os.path.relpath(panel_dir / question["reference_file"], out / "questions").replace(os.sep, "/")
         body = f'<h1>{esc(question["task"])} · {esc(sid)}</h1><pre>{esc(question["question"])}</pre>'
-        body += f'<p>参考答案：{esc(question["gold_answer"] if question["task"] == "bbh" else "公开和隐藏代码测试；无参考解答代码")}</p>'
+        if question.get("choices"):
+            body += '<pre>' + esc('\n'.join(f'{chr(65+i)}. {v}' for i, v in enumerate(question['choices']))) + '</pre>'
+        body += f'<p>参考答案：{esc("公开和隐藏代码测试；无参考解答代码" if question["task"] == "livecodebench" else question["gold_answer"])}</p>'
         body += f'<p><a href="{esc(reference)}">完整原题与测试数据</a> · <a href="{esc(sid)}.json">回答和全部 token / 判分 JSON</a></p>'
         for row in rows:
             body += (f'<details><summary>epoch {row["epoch"]} · correct={row["correct"]} · '
@@ -78,7 +80,10 @@ def report(panel_dir, grades, out, selected_ids=None):
         (out / "questions" / f"{sid}.html").write_text('<!doctype html><meta charset="utf-8">' + style + body, encoding="utf-8")
         links.append(f'<li><a href="questions/{esc(sid)}.html">{esc(question["task"])} · {esc(question["question"][:100])}</a></li>')
     csv_write(out / "question_milestones.csv", milestones)
-    body = '<h1>BBH / LiveCodeBench 迁移评测</h1><p>同一固定面板、每题一次采样。LiveCodeBench 为项目 Python 执行协议，不能当作官方完整排行榜分数。首次答对仅指这些观测节点。</p>'
+    math_panel = any(q["task"] in ("math500", "gpqa") for q in panel)
+    title = "MATH500 / GPQA 评测" if math_panel else "BBH / LiveCodeBench 迁移评测"
+    caveat = "" if math_panel else "LiveCodeBench 为项目 Python 执行协议，不能当作官方完整排行榜分数。"
+    body = f'<h1>{title}</h1><p>同一固定面板、每题一次采样。{caveat}首次答对仅指这些观测节点。</p>'
     body += '<p><a href="curves.csv">正确率和输出行为 CSV</a> · <a href="question_milestones.csv">逐题首次答对节点</a></p>'
     body += '<table><tr><th>Epoch</th><th>任务</th><th>题数</th><th>正确率</th><th>平均长度</th><th>正常 EOS</th><th>截断率</th><th>答案/代码提取率</th></tr>'
     for row in summaries:

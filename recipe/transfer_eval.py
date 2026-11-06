@@ -13,7 +13,8 @@ from .transfer_data import BBH_TASKS
 def load_panel(directory, training_sha256=None):
     directory = Path(directory).resolve()
     manifest = read_json(directory / "manifest.json")
-    if manifest.get("format_version") not in ("transfer-panel-v1", "transfer-evaluation-panel-v1"):
+    math_panel = manifest.get("format_version") == "math-gpqa-evaluation-panel-v1"
+    if not math_panel and manifest.get("format_version") not in ("transfer-panel-v1", "transfer-evaluation-panel-v1"):
         raise ValueError("Expected a completed transfer panel, not the old MATH500/GPQA panel")
     plan = read_json(directory / "plan.json")
     if training_sha256 and plan["training_sha256"] != training_sha256:
@@ -27,10 +28,11 @@ def load_panel(directory, training_sha256=None):
             or len({p["question_id"] for p in panel}) != len(panel)):
         raise ValueError("Empty or duplicate transfer panel")
     for row in panel:
-        if not isinstance(row["sample_id"], str) or not re.fullmatch(r"(?:bbh|lcb)-[0-9a-f]{64}", row["sample_id"]):
+        prefixes = {"math500": "math500", "gpqa": "gpqa"} if math_panel else {"bbh": "bbh", "livecodebench": "lcb"}
+        prefix = prefixes.get(row["task"])
+        if (not prefix or not isinstance(row["sample_id"], str)
+                or not re.fullmatch(prefix + r"-[0-9a-f]{64}", row["sample_id"])):
             raise ValueError("Invalid transfer sample ID")
-        if row["task"] not in ("bbh", "livecodebench"):
-            raise ValueError("Unsupported transfer task")
         rel = Path(row["reference_file"])
         path = (directory / rel).resolve()
         if rel.is_absolute() or not path.is_relative_to(directory / "references"):
@@ -39,6 +41,10 @@ def load_panel(directory, training_sha256=None):
             raise ValueError(f"Selected reference changed: {row['sample_id']}")
         if row["task"] == "bbh" and row["subtask"] not in BBH_TASKS:
             raise ValueError("Unexpected BBH subtask")
+    if math_panel:
+        from .math_eval import COUNTS
+        if Counter(p["task"] for p in panel) != COUNTS:
+            raise ValueError("Math/GPQA panel must contain 128 MATH500 and 64 GPQA")
     return panel, manifest
 
 

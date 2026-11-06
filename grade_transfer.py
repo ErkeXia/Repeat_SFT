@@ -1,4 +1,4 @@
-"""CPU-only resumable BBH grading and Docker-isolated LiveCodeBench test execution."""
+"""Resumable math/GPQA/BBH grading and Docker-isolated LiveCodeBench test execution."""
 from __future__ import annotations
 
 import argparse
@@ -17,20 +17,27 @@ from recipe.pipeline import Pipeline
 from recipe.transfer_eval import load_panel
 from recipe.transfer_grading import GRADER_VERSION, extract_bbh, extract_code, test_payload
 
+MATH_GPQA_GRADER_VERSION = "math-gpqa-final-v1"
 
-def grade_answer(response, question, reference, judge):
+
+def grade_answer(response, question, reference, judge, grader_version=GRADER_VERSION):
     result = {**response, "question": question["question"], "source": question["source"],
               "reference_file": question["reference_file"], "reference_sha256": question["reference_sha256"],
-              "grader_version": GRADER_VERSION, "grading_error": None,
+              "grader_version": grader_version, "grading_error": None,
               "response_sha256": digest(response)}
     for field in ("subtask", "platform", "difficulty", "contest_date", "starter_code", "interface"):
         if field in question:
             result[field] = question[field]
-    if question["task"] == "bbh":
+    if question["task"] in ("math500", "gpqa"):
+        from recipe.grading import GRADER_VERSION as MATH_GRADER_VERSION, grade_one
+        result.update(grade_one(response["raw_response"], question["gold_answer"], question["task"]))
+        result.update(math_gpqa_grader_version=MATH_GRADER_VERSION,
+                      grading_status="grading_error" if result["grading_error"] is not None else "graded")
+    elif question["task"] == "bbh":
         answer, method = extract_bbh(response["raw_response"], question["subtask"])
         result.update(extracted_answer=answer, extraction_method=method, extractable=answer is not None,
                       correct=answer == question["gold_answer"], grading_status="graded")
-    else:
+    elif question["task"] == "livecodebench":
         code, method = extract_code(response["raw_response"])
         # Validate public + hidden tests even if code extraction failed. Broken
         # dataset records are infrastructure errors, never model errors.
@@ -42,12 +49,21 @@ def grade_answer(response, question, reference, judge):
                       correct=details["correct"], grading_status=details["status"], code_execution=details,
                       public_tests=sum(c["split"] == "public" for c in tests["cases"]),
                       hidden_tests=sum(c["split"] == "private" for c in tests["cases"]))
+    else:
+        raise ValueError(f"Unsupported grading task: {question['task']}")
     return result
 
 
 def grade_directory(source, panel_dir, out, judge, stop_check=lambda: None):
     source, panel_dir, out = Path(source), Path(panel_dir), Path(out)
-    panel, _ = load_panel(panel_dir)
+    panel, panel_manifest = load_panel(panel_dir)
+    math_panel = panel_manifest["format_version"] == "math-gpqa-evaluation-panel-v1"
+    version = MATH_GPQA_GRADER_VERSION if math_panel else GRADER_VERSION
+    if math_panel:
+        import math_verify  # Infrastructure errors must not become model errors.
+    elif judge is None:
+        raise ValueError("LiveCodeBench grading requires the Docker judge")
+    image, judge_config = (judge.image, judge.config) if judge is not None else (None, None)
     questions = {p["sample_id"]: p for p in panel}
     files = sorted(source.glob("epoch-*/responses.jsonl"))
     if not files:
@@ -69,7 +85,7 @@ def grade_directory(source, panel_dir, out, judge, stop_check=lambda: None):
         epoch = identity["epoch"]
         directory = out / f"epoch-{epoch:03d}"
         binding = {"generation_identity": identity, "responses_sha256": file_hash(file),
-                   "grader_version": GRADER_VERSION, "image": judge.image, "judge_config": judge.config}
+                   "grader_version": version, "image": image, "judge_config": judge_config}
         bind_output(directory, binding)
         log = directory / "graded.jsonl"
         previous = recover_jsonl(log)
@@ -91,12 +107,12 @@ def grade_directory(source, panel_dir, out, judge, stop_check=lambda: None):
                     raise ValueError("Graded source answer/reference changed")
                 continue
             reference = read_json(panel_dir / question["reference_file"])
-            result = grade_answer(response, question, reference, judge)
+            result = grade_answer(response, question, reference, judge, version)
             append_jsonl(log, result)
             done[sid] = result
             print(f"grade epoch={epoch} {len(done)}/{len(rows)} task={question['task']} correct={result['correct']}", flush=True)
         write_json(directory / "complete.json", {"samples": len(rows), "graded_sha256": file_hash(log)})
-        for task in ("bbh", "livecodebench"):
+        for task in ("math500", "gpqa", "bbh", "livecodebench"):
             members = [r for r in done.values() if r["task"] == task]
             if members:
                 summaries.append({"epoch": epoch, "task": task, "complete_panel": True,
@@ -104,9 +120,9 @@ def grade_directory(source, panel_dir, out, judge, stop_check=lambda: None):
         sources.append({"epoch": epoch, "responses": str(file.resolve()), "sha256": file_hash(file),
                         "identity": identity, "graded_sha256": file_hash(log)})
     write_jsonl(out / "summary.jsonl", summaries)
-    write_json(out / "grading_manifest.json", {"grader_version": GRADER_VERSION, "sources": sources,
-               "panel_sha256": file_hash(panel_dir / "panel.jsonl"), "image": judge.image,
-               "config": judge.config, "environment": environment()})
+    write_json(out / "grading_manifest.json", {"grader_version": version, "sources": sources,
+               "panel_sha256": file_hash(panel_dir / "panel.jsonl"), "image": image,
+               "config": judge_config, "environment": environment()})
     return summaries
 
 
@@ -131,7 +147,9 @@ def main():
             raise SystemExit(128 + signum)
         signal.signal(signal.SIGTERM, stop)
         signal.signal(signal.SIGINT, stop)
-        judge = DockerJudge(args.image, read_json(args.judge_config))
+        _, manifest = load_panel(panel)
+        judge = (None if manifest["format_version"] == "math-gpqa-evaluation-panel-v1"
+                 else DockerJudge(args.image, read_json(args.judge_config)))
         grade_directory(source, panel, out, judge)
 
 

@@ -66,7 +66,10 @@ def prepare(args):
     panel_identity = {}
     if getattr(args, "panel_dir", None):
         from recipe.transfer_eval import load_panel
-        full_panel, _ = load_panel(panel_directory, metadata["data_files"]["train.jsonl"])
+        full_panel, panel_manifest = load_panel(panel_directory, metadata["data_files"]["train.jsonl"])
+        if panel_manifest["format_version"] == "math-gpqa-evaluation-panel-v1":
+            from recipe.math_eval import verify_math_origin
+            verify_math_origin(panel_directory, metadata["data_files"]["panel.jsonl"])
         panel_identity = {"transfer_manifest_sha256": file_hash(panel_directory / "manifest.json")}
     else:
         full_panel = list(iter_jsonl(panel_directory / "panel.jsonl"))
@@ -186,12 +189,12 @@ def main():
     p.add_argument("--engine-config", default="configs/vllm.json")
     p.add_argument("--out", help="Default RUN/evaluations/generation-vllm; never the Transformers output directory")
     p.add_argument("--sample-ids")
-    p.add_argument("--panel-dir", help="Separate prepared transfer panel; never replaces the run's original panel")
+    p.add_argument("--panel-dir", help="Separate transfer or frozen math/GPQA panel; never replaces the run's original panel")
     p.add_argument("--limit-per-task", type=int, help="Optional smoke-only subset; not a concurrency benchmark")
     p.add_argument("--progress-label", default="")
     args = p.parse_args()
     if args.panel_dir and not args.out:
-        p.error("An external transfer panel requires a separate explicit --out directory")
+        p.error("An external evaluation panel requires a separate explicit --out directory")
     configure_vllm_runtime()
     from grouped_evaluation import job_lock
     run = artifact_path(args.run)
