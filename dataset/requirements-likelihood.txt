@@ -1,0 +1,3 @@
+# Install only into the existing, separate vLLM environment.
+-r ../requirements-vllm.txt
+pyarrow>=17,<24

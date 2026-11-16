@@ -1,0 +1,4 @@
+# Large original datasets stay local.
+*/raw/
+# Per-token likelihood artifacts and frozen dataset/model metadata stay on the volume.
+*/likelihood/
