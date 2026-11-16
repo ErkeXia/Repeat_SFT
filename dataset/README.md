@@ -8,6 +8,7 @@
 - [直接阅读：解答最长的 100 条](math-cot-20k/exports/longest-100/README.md)
 - [直接阅读：原始顺序前 100 条](math-cot-20k/exports/first-100/README.md)
 - [在 VM 上计算 Math-CoT-20k 全集 Base 似然并生成阅读报告](LIKELIHOOD.md)
+- [高/低似然各 100 条：一次启动两组 16 轮 LoRA 训练](LIKELIHOOD_TRAINING.md)
 
 ## 目录约定
 
