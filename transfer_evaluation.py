@@ -26,9 +26,10 @@ from report_transfer import report
 def prepare(run, panel_source, job, args):
     setup = job / "setup"
     mode = getattr(args, "mode", "transfer")
-    if mode not in ("transfer", "replay-math", "replay-transfer"):
+    if mode not in ("transfer", "math", "replay-math", "replay-transfer"):
         raise ValueError("Unknown evaluation mode")
-    replay_mode, math_mode = mode != "transfer", mode == "replay-math"
+    replay_mode = mode.startswith("replay-")
+    math_mode = mode in ("math", "replay-math")
     if setup.exists():
         plan = read_json(setup / "plan.json")
         if plan.get("evaluation_kind", "transfer") != mode:
@@ -105,8 +106,10 @@ def prepare(run, panel_source, job, args):
             "generation_epochs": epochs, "generation_backend": "vllm", "settings": settings,
             "checkpoints": checkpoints, "code_sha256": code_hash, "image": judge.image if judge else None,
             "preflight": preflight, "setup_files": files}
+    if mode != "transfer":
+        plan["evaluation_kind"] = mode
     if replay_mode:
-        plan.update(evaluation_kind=mode, replay=metadata["replay"])
+        plan["replay"] = metadata["replay"]
     if math_mode:
         plan["math_panel_sha256"] = metadata["data_files"]["panel.jsonl"]
     write_json(staged / "plan.json", plan)
@@ -132,7 +135,7 @@ def verify(job):
     if plan.get("evaluation_kind") in ("replay-math", "replay-transfer"):
         if plan["replay"] != metadata.get("replay") or not set(plan["generation_epochs"]) <= set(evaluation_epochs(metadata)):
             raise ValueError("Replay checkpoint selection or lineage changed")
-    if plan.get("evaluation_kind") == "replay-math":
+    if plan.get("evaluation_kind") in ("math", "replay-math"):
         from recipe.math_eval import verify_math_origin
         verify_math_origin(setup / "panel", metadata["data_files"]["panel.jsonl"])
     for epoch, expected in plan["checkpoints"].items():

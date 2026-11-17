@@ -94,6 +94,8 @@ python evaluate_loss.py --run runs/likelihood-100x16-s42/low  --epochs 0,1,2,4,8
 
 各组为普通 LoRA run，可继续使用现有生成/判分/分析入口；评测时显式指定本次实际保存的 epoch。
 
+两组一起做 MATH500、GPQA、BBH、LiveCodeBench 自由生成评测，使用新增的 [四任务 vLLM 入口](LIKELIHOOD_BENCHMARKS.md)。该入口不要求先做上述拟合评测，保留原题并重新核验新训练集的题目重合；一次启动依次完成 high、low，各面板分四组，可中断续跑。
+
 ## 验证范围
 
 ```bash
