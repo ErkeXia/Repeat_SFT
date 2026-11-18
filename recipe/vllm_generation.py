@@ -37,7 +37,7 @@ def validate_config(config):
     return config
 
 
-def engine_options(metadata, config, prompts, model_context, settings):
+def engine_options(metadata, config, prompts, model_context, settings, *, base_only=False):
     validate_config(config)
     ft = validate_finetuning(metadata["config"].get("finetuning"))
     if ft["base_quantization"] != "none":
@@ -49,7 +49,7 @@ def engine_options(metadata, config, prompts, model_context, settings):
     if limit < budget or limit > model_context:
         raise ValueError(f"Need prompt + new tokens = {budget}; max_model_len={limit}, Base context={model_context}. "
                          "Do not truncate prompts or silently reduce the generation budget.")
-    return {"model": metadata["model"]["id"], "revision": metadata["model"]["revision"],
+    options = {"model": metadata["model"]["id"], "revision": metadata["model"]["revision"],
             "dtype": config["dtype"], "lora_dtype": config["lora_dtype"], "quantization": None,
             "enable_lora": True, "max_lora_rank": config["max_lora_rank"], "max_loras": 1,
             "max_cpu_loras": 8, "max_num_seqs": 8, "max_num_batched_tokens": config["max_num_batched_tokens"],
@@ -58,6 +58,11 @@ def engine_options(metadata, config, prompts, model_context, settings):
             "enable_prefix_caching": False, "enable_chunked_prefill": True,
             "skip_tokenizer_init": True, "trust_remote_code": False, "generation_config": "vllm",
             "seed": settings["seed"], "disable_log_stats": False}
+    if base_only:
+        options["enable_lora"] = False
+        for key in ("lora_dtype", "max_lora_rank", "max_loras", "max_cpu_loras"):
+            del options[key]
+    return options
 
 
 def sampling_options(settings, eos_id, end_id):

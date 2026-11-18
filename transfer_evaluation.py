@@ -26,6 +26,7 @@ from report_transfer import report
 def prepare(run, panel_source, job, args):
     setup = job / "setup"
     mode = getattr(args, "mode", "transfer")
+    base_only = getattr(args, "base_only", False)
     if mode not in ("transfer", "math", "replay-math", "replay-transfer"):
         raise ValueError("Unknown evaluation mode")
     replay_mode = mode.startswith("replay-")
@@ -34,6 +35,8 @@ def prepare(run, panel_source, job, args):
         plan = read_json(setup / "plan.json")
         if plan.get("evaluation_kind", "transfer") != mode:
             raise ValueError("This saved job uses a different panel mode; choose another job name")
+        if plan.get("base_only", False) != base_only:
+            raise ValueError("Base-only and adapter evaluations require separate job names")
         if (plan["run"] != str(run) or plan["panel_source"] != str(panel_source)
                 or (args.epochs and generation_epochs(args.epochs) != plan["generation_epochs"])):
             raise ValueError("Resume inputs differ from the frozen transfer job; choose another job name")
@@ -59,6 +62,8 @@ def prepare(run, panel_source, job, args):
         panel, _ = load_panel(panel_source, metadata["data_files"]["train.jsonl"])
         groups = partition(panel)
     epochs = generation_epochs(args.epochs or ",".join(map(str, evaluation_epochs(metadata)))) if replay_mode else generation_epochs(args.epochs)
+    if base_only and epochs != [0]:
+        raise ValueError("Base-only evaluation requires epoch 0 exclusively")
     if not set(epochs).issubset(evaluation_epochs(metadata)):
         raise ValueError("Requested epochs are not saved targets of this run; use the run containing those checkpoints")
     checkpoints = {}
@@ -108,6 +113,8 @@ def prepare(run, panel_source, job, args):
             "preflight": preflight, "setup_files": files}
     if mode != "transfer":
         plan["evaluation_kind"] = mode
+    if base_only:
+        plan["base_only"] = True
     if replay_mode:
         plan["replay"] = metadata["replay"]
     if math_mode:
@@ -123,6 +130,8 @@ def verify(job):
     if read_json(setup / "complete.json")["plan_sha256"] != file_hash(setup / "plan.json"):
         raise ValueError("Frozen transfer plan changed")
     plan = read_json(setup / "plan.json")
+    if plan.get("base_only") and plan["generation_epochs"] != [0]:
+        raise ValueError("Base-only evaluation requires epoch 0 exclusively")
     run = Path(plan["run"])
     if file_hash(run / "run.json") != plan["run_sha256"]:
         raise ValueError("Original run metadata changed")
@@ -180,7 +189,8 @@ def execute(job, pipeline):
         pipeline.invoke([sys.executable, "-B", "-u", code / "generate_vllm.py", "--run", plan["run"],
                          "--panel-dir", panel_dir, "--epochs", ",".join(map(str, epochs)),
                          "--sample-ids", ids, "--config", setup / "generation.json", "--engine-config", setup / "vllm.json",
-                         "--out", directory / "generation", "--progress-label", f"group={index}/4"], code)
+                         "--out", directory / "generation", "--progress-label", f"group={index}/4",
+                         *(["--base-only"] if plan.get("base_only") else [])], code)
         write_json(job / "progress.json", {"group": index, "stage": "grading", "epochs": epochs})
         judge_options = ["--image", plan["image"]["id"], "--judge-config", setup / "judge.json"] if plan["image"] else []
         pipeline.invoke([sys.executable, "-B", "-u", code / "grade_transfer.py", "--responses", directory / "generation",

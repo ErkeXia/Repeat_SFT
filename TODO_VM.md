@@ -306,3 +306,20 @@ echo "迁移评测 PID=$!"
 - [ ] 四组各 50 题，每组完成原五个节点的生成/判分/报告后再进入下一组；不用先跑拟合 loss。
 - [ ] 中断后重跑同一命令；不加 reset，不换输出目录，已完成题和组保留。
 - [ ] 查看 `runs/random-lora-s42/postprocess/transfer-e4plus-vllm-v1/report/report.html`、`curves.csv` 和逐题 JSON；第一组完成就能先看 `groups/group-001/report/report.html`。
+
+## 14. 原始 Base 四任务对照
+
+- [ ] 保留原 `random-lora-s42` 的 epoch 0、数据、tokenizer 和模型版本记录；使用第 13 节同一迁移面板和 Docker 镜像。
+- [ ] GPU 空闲后按 [BASE_EVALUATION.md](BASE_EVALUATION.md) 启动。入口自动使用独立 vLLM 环境；BF16 Base、不加载 LoRA；两个面板各四组，共 392 条回答。
+
+```bash
+mkdir -p /data/repeat_sft/logs
+nohup bash run_base_vllm.sh \
+  --run runs/random-lora-s42 --panel-dir artifacts/transfer-s2026 \
+  --job-name base-four-benchmarks-vllm-v1 \
+  >> /data/repeat_sft/logs/base-four-benchmarks-vllm-v1.log 2>&1 < /dev/null &
+echo "Base 评测 PID=$!"
+```
+
+- [ ] 中断后重跑相同命令，已完成回答和判分保留；可先加 `--prepare-only` 检查输入及两个判分器。
+- [ ] 查看 `/data/repeat_sft/runs/random-lora-s42/postprocess/base-four-benchmarks-vllm-v1/report.html`、`curves.csv`、`summary.json`。只有出现顶层 `complete.json` 才代表四个任务全部完成。

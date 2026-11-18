@@ -78,6 +78,12 @@ class VllmConfigTests(unittest.TestCase):
         self.assertTrue(opts["skip_tokenizer_init"])
         self.assertFalse(opts["enable_prefix_caching"])
         self.assertIsNone(opts["quantization"])
+        base_opts = engine_options(metadata, cfg, prompts, 32768, settings, base_only=True)
+        self.assertFalse(base_opts["enable_lora"])
+        self.assertEqual(base_opts["revision"], opts["revision"])
+        self.assertEqual(base_opts["max_model_len"], opts["max_model_len"])
+        self.assertNotIn("lora_dtype", base_opts)
+        self.assertNotIn("max_lora_rank", base_opts)
         sampling = sampling_options(settings, 3, 2)
         self.assertEqual((sampling["temperature"], sampling["top_p"], sampling["top_k"]), (.6, .95, 20))
         self.assertEqual(sampling["max_tokens"], 8192)
@@ -191,6 +197,27 @@ class VllmPreparationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not a saved training checkpoint"):
             self.prepare(args)
 
+    def test_base_only_uses_pinned_base_and_rejects_adapter_output_or_nonzero_epoch(self):
+        import shutil
+        ckpt = self.run / "checkpoints/epoch-000"
+        # The synthetic fixture has an epoch-0 marker, but needs an adapter manifest.
+        shutil.copytree(self.ckpt, ckpt, dirs_exist_ok=True)
+        write_json(ckpt / "complete.json", {**read_json(ckpt / "complete.json"), "step": 0})
+        args = self.args(self.root / "base")
+        args.epochs, args.base_only = None, True
+        prepared = self.prepare(args)
+        self.assertEqual([c["epoch"] for c in prepared["checkpoints"]], [0])
+        self.assertFalse(prepared["options"]["enable_lora"])
+        identity = read_json(self.root / "base/epoch-000/identity.json")
+        self.assertEqual(identity["backend_config"]["runtime"]["model_mode"], "base_only_no_adapter")
+        self.assertIsNone(identity["backend_config"]["runtime"]["adapter_compute_dtype"])
+        args.epochs = "0,4"
+        with self.assertRaisesRegex(ValueError, "epoch 0 exclusively"):
+            self.prepare(args)
+        args.epochs, args.base_only = "0", False
+        with self.assertRaisesRegex(ValueError, "different input/config/code"):
+            self.prepare(args)
+
     def test_external_transfer_panel_preserves_original_questions_and_uses_full_context(self):
         from test_transfer_evaluation import panel_fixture
         original = file_hash(self.run / "data" / "panel.jsonl")
@@ -301,6 +328,28 @@ class VllmGenerationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual({r[0].split(":")[1] for r in resumed.requests},
                          {r["sample_id"] for r in self.panel} - done)
         self.assertEqual(len(list(iter_jsonl(saved))), len(self.panel))
+
+    async def test_base_only_never_constructs_adapter_and_resumes_only_missing_answers(self):
+        def prepared():
+            p = self.prepared([0])
+            p.update(base_only=True, options={"max_num_seqs": 8, "enable_lora": False})
+            return p
+        def no_adapter(*a):
+            self.fail("Base evaluation must never instantiate LoRARequest")
+        failed = FakeEngine(fail_id="q-1")
+        with self.assertRaisesRegex(RuntimeError, "synthetic interrupted"):
+            await run_checkpoints(prepared(), lambda options: failed, no_adapter, SimpleNamespace, "FINAL_ONLY")
+        log = self.root / "epoch-000/responses.jsonl"
+        prefix = log.read_bytes()
+        done = {r["sample_id"] for r in iter_jsonl(log)}
+        resumed = FakeEngine()
+        await run_checkpoints(prepared(), lambda options: resumed, no_adapter, SimpleNamespace, "FINAL_ONLY")
+        self.assertTrue(log.read_bytes().startswith(prefix))
+        self.assertTrue(all(r[3] is None for r in failed.requests + resumed.requests))
+        self.assertEqual({r[0].split(":")[1] for r in resumed.requests}, {r["sample_id"] for r in self.panel} - done)
+        self.assertTrue(failed.closed and resumed.closed)
+        await run_checkpoints(prepared(), lambda _: self.fail("Completed job reloaded the GPU"), no_adapter,
+                              SimpleNamespace, "FINAL_ONLY")
 
     async def test_cancellation_aborts_pending_requests_shuts_down_and_keeps_saved_row(self):
         engine = FakeEngine(blocked=True)

@@ -50,6 +50,10 @@ def runtime_identity():
 
 
 def prepare(args):
+    base_only = getattr(args, "base_only", False)
+    epochs = generation_epochs(args.epochs or "0") if base_only else generation_epochs(args.epochs)
+    if base_only and epochs != [0]:
+        raise ValueError("--base-only requires epoch 0 exclusively; no trained adapter is loaded")
     from transformers import AutoConfig, AutoTokenizer
     run = artifact_path(args.run)
     metadata = verify_run_inputs(run)
@@ -91,13 +95,16 @@ def prepare(args):
                                               trust_remote_code=False)
     if model_config.model_type != "qwen3":
         raise ValueError("This backend is validated for dense Qwen3 LoRA")
-    options = engine_options(metadata, config, prompts, model_config.max_position_embeddings, settings)
+    options = engine_options(metadata, config, prompts, model_config.max_position_embeddings, settings,
+                             base_only=base_only)
     runtime = runtime_identity()
+    if base_only:
+        runtime = {**runtime, "adapter_compute_dtype": None, "model_mode": "base_only_no_adapter"}
     backend_config = {"engine_options": options, "runtime": runtime,
                       "base_config_sha256": digest(model_config.to_dict())}
     base = artifact_path(args.out) if args.out else run / "evaluations" / "generation-vllm"
     checkpoints = []
-    for epoch in generation_epochs(args.epochs):
+    for epoch in epochs:
         if epoch not in evaluation_epochs(metadata):
             raise ValueError(f"Epoch {epoch} is not a saved training checkpoint")
         ckpt = checkpoint_path(run, epoch)
@@ -120,10 +127,14 @@ def prepare(args):
         checkpoints.append({"epoch": epoch, "checkpoint": ckpt, "out": out, "pending": len(panel) - len(done)})
     return {"options": options, "checkpoints": checkpoints, "panel": panel, "prompts": prompts,
             "settings": settings, "tokenizer": tokenizer, "eos_id": eos_id, "end_id": end_id,
-            "progress_label": args.progress_label}
+            "progress_label": args.progress_label, "base_only": base_only}
 
 
 async def run_checkpoints(prepared, engine_factory, lora_factory, sampling_factory, final_output_kind):
+    base_only = prepared.get("base_only", False)
+    if base_only and (prepared["options"].get("enable_lora") is not False
+                      or [item["epoch"] for item in prepared["checkpoints"]] != [0]):
+        raise ValueError("Base-only generation requires a disabled LoRA engine and epoch 0 only")
     engine = None
     startup_seconds = None
     try:
@@ -141,7 +152,7 @@ async def run_checkpoints(prepared, engine_factory, lora_factory, sampling_facto
                 print(f"vLLM Base loaded once for this group; startup={startup_seconds:.1f}s; concurrency=8", flush=True)
             append_jsonl(out / "engine_startups.jsonl", {"timestamp": now(), "startup_seconds": startup_seconds,
                                                         "note": "Shared Base instance across this group's checkpoints"})
-            lora = lora_factory(f"epoch-{epoch:03d}", epoch + 1, str(item["checkpoint"]))
+            lora = None if base_only else lora_factory(f"epoch-{epoch:03d}", epoch + 1, str(item["checkpoint"]))
             await generate_epoch(engine, lora, prepared["panel"], prepared["prompts"], out, epoch,
                                  prepared["settings"], prepared["tokenizer"], prepared["eos_id"], prepared["end_id"],
                                  sampling_factory, final_output_kind, prepared["progress_label"])
@@ -185,6 +196,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--run", required=True)
     p.add_argument("--epochs", help="Default 64,32,16,8,4; always descending")
+    p.add_argument("--base-only", action="store_true", help="Pinned BF16 Base without any adapter; epoch 0 only")
     p.add_argument("--config", default="configs/generation.json")
     p.add_argument("--engine-config", default="configs/vllm.json")
     p.add_argument("--out", help="Default RUN/evaluations/generation-vllm; never the Transformers output directory")
