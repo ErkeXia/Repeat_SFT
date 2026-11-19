@@ -11,6 +11,7 @@
 - [高/低似然各 100 条：一次启动两组 16 轮 LoRA 训练](LIKELIHOOD_TRAINING.md)
 - [High/Low 四个 benchmark：一次启动 vLLM 评测、判分与报告](LIKELIHOOD_BENCHMARKS.md)
 - [人工改写 10 条：Base 似然度后，从 Base 训练 128 轮 LoRA](CURATED_TRAINING.md)
+- [改写数据检查点：按 epoch 倒序做四任务评测及统一报告](CURATED_BENCHMARKS.md)
 
 ## 目录约定
 

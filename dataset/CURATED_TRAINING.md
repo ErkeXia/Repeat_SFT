@@ -99,7 +99,7 @@ python -B -u dataset/train_curated.py --out runs/curated-10x128-s42 --stop-after
 
 这里的归一化似然是 `exp(mean_logprob)`，不是整条解答概率；同时保留 sum logprob、序列 log10 likelihood。汇总区分逐样本平均和按 token 加权的平均，避免回答长度变化带来解释混淆。High/Low 只是改写前标签，新分数不一定仍处于原来的高/低端。
 
-不会自动运行四个 benchmark 的长生成。若之后查看训练/holdout 拟合曲线，可以在训练环境运行：
+不会自动运行四个 benchmark 的长生成。训练完成后可用 [按 epoch 倒序的四任务评测入口](CURATED_BENCHMARKS.md)，每个 epoch 全部完成后生成统一报告。若之后查看训练/holdout 拟合曲线，可以在训练环境运行：
 
 ```bash
 python evaluate_loss.py \
