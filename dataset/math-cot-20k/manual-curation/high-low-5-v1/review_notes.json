@@ -1,0 +1,152 @@
+{
+  "created_date": "2026-11-19",
+  "selection_scope": "User-provided row_index lists from the actual high/low 100-example training files; not full-corpus report tails",
+  "membership_evidence": "User pasted both 100-element lists on 2026-11-19, obtained from runs/likelihood-100x16-s42/bundle/prepared/{high,low}/train.jsonl. VM files themselves have not been read locally.",
+  "review_scope": "All 200 question texts have not been exhaustively audited. Candidate primary solution chains were read and checked; this is not certification of every sentence of the full original responses.",
+  "actual_training_lists": {
+    "high": [13111,8736,16416,14120,15087,1078,16497,13370,11801,11736,12459,12184,3030,9801,3980,6407,20070,14714,18955,18582,19218,12562,12416,17597,9931,11747,6694,3589,1620,11963,7355,10508,11265,302,6635,13255,11282,2580,6553,12399,18192,4561,4440,7278,3902,7836,6527,18086,18168,9554,18036,19052,10690,2336,9812,5654,4303,11474,6422,18616,738,6512,4959,7752,7446,12441,6430,13303,10023,16166,3170,6837,2988,19105,17592,16961,6742,14920,9064,17547,8457,16723,1432,12999,3399,8960,1658,7448,3810,9864,3497,12433,14576,17424,12733,4341,20271,3300,130,14236],
+    "low": [16190,8704,10870,10767,14353,17413,2944,2130,12817,877,17078,15054,18698,14820,14889,16576,11816,4966,4493,14139,730,3393,19383,5861,4388,9097,8213,3469,15047,10800,2096,6693,8351,9553,7313,10037,19646,13767,7578,4438,10855,12114,20066,7341,2261,13861,5034,10319,8714,19261,17772,3759,1971,8372,5459,4593,12280,18551,3379,8314,5582,4501,5170,17005,19611,4328,7714,2943,11595,8770,10095,359,4509,6943,3028,10659,18847,19368,16256,15183,8984,5722,1561,8719,16708,7075,15149,1908,7417,7463,5774,17476,14496,506,16023,15706,7684,9298,591,7352]
+  },
+  "candidates": [
+    {
+      "group": "high", "row_index": 6430,
+      "title": "三条直线确定三角形，求外接圆",
+      "topic": "解析几何：交点、圆方程、线性消元",
+      "reason": "首条方法连续经过求三顶点、列圆方程、消元、配方，所需步骤较多且有清楚的依赖关系；属于这十条中最适合保留较长有效推理的候选。",
+      "verified_chain": "三个顶点是 (-2,-1)、(2,-3)、(5,6)。设圆为 x²+y²+Dx+Ey+F=0，代入得到 D=E=-4、F=-17，配方得到 (x-2)²+(y-2)²=25。三个点到 (2,2) 的距离平方都为 25。",
+      "keep": "保留首条解法的交点计算、三元一次方程组消元和配方；将所有验算合并为最后的一次三点代入。",
+      "cut": "删掉分别反复核对直线交点、再验一般式、再验半径、再展开配方的重复检查；删除整个垂直平分线第二解法及结尾格式犹豫。",
+      "caveat": "首条解法的主要计算已核对。原文把一次解法后的大量复核仍放在首次 Final Answer 标题前，不能仅按标题截取。",
+      "primary_end_anchor": "Therefore, the standard form is (x - 2)^2 + (y - 2)^2 = 25. So the center is at (2, 2) and radius 5.",
+      "secondary_anchor": "Alternatively, another way to find the circumcircle is by finding the perpendicular bisectors",
+      "edit_effort": "主要删重复；保留较长的必要计算链"
+    },
+    {
+      "group": "high", "row_index": 2988,
+      "title": "二元二次方程组，求全部实数解",
+      "topic": "代数：变量替换、分类求根、解的完备性",
+      "reason": "相加后令 S=x+y，分两个分支求四组解；首条有效方法计算正确，并且有完整性论证。与几何、模运算和最值题差异明显。",
+      "verified_chain": "相加得到 S²-77S+1470=0，所以 S=42 或 35。两个分支分别得到 2x²-103x+1260=0 和 2x²-89x+924=0，判别式均为 529。四组解为 (63/2,21/2)、(20,22)、(28,7)、(33/2,37/2)，均满足原方程。",
+      "keep": "保留两式相加、S 的两根、两个分支的二次方程及求根、无遗漏说明；四组解统一在一个验证段中代回原方程。",
+      "cut": "开头把第一式配成圆的过程计算正确但后文不用，建议删掉；删掉得到四组解后关于分数/小数、一个框/四个框的多次犹豫，以及 </think> 后再次完整推导。",
+      "caveat": "不是完全没有探索：开头的配方支路没有参与最终方法。统一成较直的推理链时，从相加并引入 S 开始最合适。",
+      "primary_end_anchor": "Therefore, the answer should be these four pairs.",
+      "secondary_anchor": "But wait, the instructions say",
+      "edit_effort": "删除一个无用支路和答案格式循环"
+    },
+    {
+      "group": "high", "row_index": 4561,
+      "title": "含 k、k²、k³ 的二项式系数求和",
+      "topic": "组合恒等式：生成函数与求导",
+      "reason": "从二项式定理逐级推到三个矩，推理步骤丰富且结构统一；长处来自必要推导，而不只是原文篇幅长。",
+      "verified_chain": "对 (1+x)^n 反复应用 x·d/dx，得到 ΣkC(n,k)=n2^(n-1)、Σk²C(n,k)=n(n+1)2^(n-2)、Σk³C(n,k)=n²(n+3)2^(n-3)。原式为 [n²(n+3)-3n²(n+1)+2n³]2^(n-2)=0。",
+      "keep": "保留生成函数、三次有目的的求导/乘 x、x=1 代入以及最后消项；可以保留一次小 n 检查，但公式推导才是证明。",
+      "cut": "合并逐行重复抄写的公式；删掉连续检查 n=1、2、3、4，以及得到 0 后反复怀疑结果并重新展开的段落。",
+      "caveat": "不用改成只引用三个现成公式，否则会把这题最有价值的推理过程删掉。小 n 检查不能替代一般证明。",
+      "primary_end_anchor": "So total is 0? That would mean the entire expression is 0 * 2^{n - 2} = 0?",
+      "secondary_anchor": "But that seems strange. Let me verify with n=1,2,3.",
+      "edit_effort": "保留推导，合并复核；适合较长有效推理"
+    },
+    {
+      "group": "high", "row_index": 14120,
+      "title": "求 10^2022−9^2022 的末三位",
+      "topic": "数论：同余、欧拉定理、模幂",
+      "reason": "首轮就正确完成模 1000 建模、互素条件检查、指数化简及余数计算；后面的多套重复证明很容易分离。",
+      "verified_chain": "10^2022≡0 (mod 1000)，gcd(9,1000)=1，φ(1000)=400，故 9^2022≡9^22≡881。于是原数末三位为 -881 mod 1000=119。原文首次列出的 9^1 至 9^22 的余数均已核对。",
+      "keep": "保留互素条件、欧拉定理化指数和一条明确的模幂计算路线。原文逐次乘 9 的过程可以压成表，或者你手动改成平方乘法。",
+      "cut": "删掉再次完整重算 22 个余数、中国剩余定理第二解法、之后另起的平方乘法验证和多次解释借位。最多保留一种检查。",
+      "caveat": "原始 8829 tokens 不代表需要同样长的改写。这里连续 22 次乘法虽然正确，也可比原文更紧凑。",
+      "primary_end_anchor": "Therefore, the last three digits of $10^{2022} - 9^{2022}$ should be 119.",
+      "secondary_anchor": "But wait, let me double-check my calculations",
+      "edit_effort": "删第二、第三解法，并压缩机械乘法"
+    },
+    {
+      "group": "high", "row_index": 1432,
+      "title": "sin³α/cosα + cos³α/sinα 的最小值",
+      "topic": "三角函数最值：恒等变形、定义域、单调性",
+      "reason": "首条方法从通分到 x=sinαcosα，再用严格单调性和等号条件结束，主线干净；与四道计算型题搭配。",
+      "verified_chain": "原式=1/x−2x，且 x∈(0,1/2]。导数 -1/x²−2<0，最小值在 x=1/2 取得，为 1，对应 α=π/4。",
+      "keep": "保留通分恒等式、换元的准确取值范围、导数符号及取等条件；最后只代入 α=π/4 检查一次。",
+      "cut": "首条方法得出 1 之后，删除直接对 α 求导的整套第二方法、AM-GM 探索、其他不等式证明和重复复核。",
+      "caveat": "清理后会比前三道高似然题短；不建议为长度保留多套证明。取值范围与等号可达到这两点必须留下。",
+      "primary_end_anchor": "Wait, so does that mean the minimum value is 1?",
+      "secondary_anchor": "Alternatively, maybe I can use calculus on the original expression",
+      "edit_effort": "在首条证明结束后收束"
+    },
+    {
+      "group": "low", "row_index": 16190,
+      "title": "10 米梯子滑动时，顶端下降速度",
+      "topic": "微积分应用：相关变化率与量纲/方向",
+      "reason": "低似然组里优先推荐。首轮建模、求导、代值全部正确；大段冗余主要来自得到答案后反复争论正负号，清理目标非常明确。",
+      "verified_chain": "x²+y²=100，对 t 求导得 2x x′+2y y′=0。x=6 时 y=8，x′=1，故 y′=−3/4 m/s；下降速度为 3/4 m/s。",
+      "keep": "保留变量定义、勾股约束、对时间求导、求 y 和代值；用一句话区分有符号的高度变化率与下降速度，最后给单位和方向。",
+      "cut": "第一次得到 3/4 m/s 后，保留一次简短检查即可。删除所有关于教材惯例、题目到底想要正号还是负号的来回猜测，以及重复代值。",
+      "caveat": "这条在实际 low-100 名单内，但不在本地全量后 100 报告中，因此没有从报告填入其似然数值。组别依据你提供的实际名单；长度来自原数据字段。",
+      "primary_end_anchor": "So, the top of the ladder is sliding down the wall at a rate of 3/4 meters per second when the bottom is 6 meters from the wall.",
+      "secondary_anchor": "But let me think again if there's any possible mistake.",
+      "edit_effort": "主要删除符号与措辞循环；优先推荐"
+    },
+    {
+      "group": "low", "row_index": 15054,
+      "title": "任选五项有相同绝对值，最多有多少不同实数",
+      "topic": "离散极值：抽屉原理、上界与构造",
+      "reason": "第一次主线正确区分绝对值个数和实数个数，能整理成上界、达到上界、验证条件三个阶段。后续长篇怀疑不产生新的必要信息。",
+      "verified_chain": "若存在五种不同绝对值，各取一个代表就违反题设，因此至多四种绝对值。每个非零绝对值对应至多两个实数，总数≤8。取 ±1、±2、±3、±4，再重复已有值补满 2019 项，即达到 8；任取五项必有两个绝对值相同。",
+      "keep": "保留最多四种绝对值的反证、每种至多正负两个值、零不利于最大化及可达性。把原文隐含的构造写明确：八种数至少各出现一次，其余 2011 项重复已有值。",
+      "cut": "删掉已经得到 8 之后反复提出五种绝对值、多重出现、正负号能否逃过限制的段落；删掉重复的集合/图论类比。",
+      "caveat": "后续循环中有错误的一句：五种绝对值各出现一次就‘不能选出五种’，紧接着又自我否定。不要保留这段。原主线的构造说明较概括，建议补具体的八个数，而不是增加无关推理。",
+      "primary_end_anchor": "So that condition is satisfied.",
+      "secondary_anchor": "Wait, maybe my reasoning is too simplistic.",
+      "edit_effort": "删循环，并把达到上界的构造写清楚"
+    },
+    {
+      "group": "low", "row_index": 17772,
+      "title": "五个三人队围圆桌，队长坐两名队员之间",
+      "topic": "排列计数：分组、圆排列、内部顺序",
+      "reason": "第一次计数就正确得到 4!·2^5。解法由几个不同约束逐层组合，适合统一成分块—内部排列—旋转约定—乘法原理的格式。",
+      "verified_chain": "每队作为连续块；五个不同块的圆排列为 (5−1)!=24。每块队长居中，两个队员有 2 种顺序，独立贡献 2^5。题设只合并旋转、不合并镜像，所以总数为 768。",
+      "keep": "保留首轮分块、内部 2 种、圆排列 4!、相乘；从后文提取一句镜像算不同所以不除以 2 的解释。",
+      "cut": "删除 2 队和 3 队的反复类比、固定一块是否限制内部顺序的重复怀疑、以及线性排列该除以 5 还是 15 的绕路。",
+      "caveat": "首次得到正确公式后，2 队举例把队长放在 [A1 (leader), A2, A3] 的端点，与题意冲突。这不是可直接照抄的干净原文；需整段删除。第一次分块证明本身成立。",
+      "primary_end_anchor": "Therefore, multiplying these two results together, the total number of seating arrangements would be 4! * 2^5.",
+      "secondary_anchor": "Team A: [A1 (leader), A2, A3]",
+      "edit_effort": "保留首轮计数，删除含错误的后续类比"
+    },
+    {
+      "group": "low", "row_index": 506,
+      "title": "A 说‘至少一人说谎’，判断骑士和说谎者",
+      "topic": "命题逻辑：分类讨论、命题否定、反证",
+      "reason": "首次分类论证成立，题型与数值计算、计数和调度差别很大；答案格式争论发生在已经明确角色之后，适合观察删除输出循环的影响。",
+      "verified_chain": "若 A 是骑士，陈述为真且 A 不是说谎者，因此 B 说谎，此情形一致。若 A 说谎，陈述应为假，否定后得到两人都不是说谎者，与假设冲突。唯一一致分配是 A 骑士、B 说谎者。",
+      "keep": "保留角色定义、关于 A 的两个分支、排除矛盾；最多再代入最终分配检查一次。",
+      "cut": "两分支已经证明后，不必再做四分配的第二套完整证明。首次 Final Answer 之后关于一个框/两个框、只写 A 还是 A 和 B 的长篇讨论全部删除。",
+      "caveat": "数据集短答案字段只有 A，完整语义是 A 为骑士、B 为说谎者。正文应交代两者；最终若沿用原判分可框 A，并明确 A 是骑士。此题必要推理本来较短，不宜强行扩长。",
+      "primary_end_anchor": "Wait, but let me think again. Sometimes these puzzles can be tricky.",
+      "secondary_anchor": "But since the question asks",
+      "edit_effort": "首轮两分支可用；删除答案排版循环"
+    },
+    {
+      "group": "low", "row_index": 10037,
+      "title": "容量两块的锅，三块肉饼如何在 15 分钟煎完",
+      "topic": "调度优化：可行时间表与资源下界",
+      "reason": "第一张实际时间表正确，后文还有有效的资源下界，能整理成可行方案加最优性证明；为低组增加与逻辑、计数不同的构造型题。",
+      "verified_chain": "0–5 分钟煎 A1/B1，5–10 分钟煎 A2/C1，10–15 分钟煎 B2/C2。六个面各煎 5 分钟，容量每时刻≤2。总工作量为 30 个锅位·分钟，两个锅位给出时间≥15 分钟；该时间表达到下界。",
+      "keep": "保留第一张三段时间表；从后文保留一次 3×10/2=15 的下界；最后统一检查六个面都煎满 5 分钟，给出‘可以，15 分钟’。",
+      "cut": "删除反复重新叙述同一时间表、重新回到先煎完两块再煎第三块的 20 分钟方案，以及完成正确方案后继续怀疑能否把肉饼取出。",
+      "caveat": "在第一次写出时间表前，有一句‘we can't take it out and put it back’的无依据犹豫，随即采用了正确的取出再放回方案。这句需删除。因此它是需要小幅清理的候选，而非每句话都合格的原稿；必要推理也比较短。",
+      "primary_end_anchor": "Total time: 15 minutes. That seems to work!",
+      "secondary_anchor": "the theoretical minimum would be 30 / 2 = 15 minutes",
+      "edit_effort": "删一句初始误解；保留时间表和一段最优性证明"
+    }
+  ],
+  "screened_out_examples": [
+    {"group":"low","row_index":19611,"reason":"在首次完整解法前混淆前两大与唯一最大，错误声称两个候选中较小者不在前两大；最终 16 正确不足以说明首轮逻辑可靠。"},
+    {"group":"low","row_index":2944,"reason":"首次证明前把完全定向图每个点的出度说成 n−1；主线中有图论概念错误。"},
+    {"group":"low","row_index":4966,"reason":"开头把目标 CCCCCCTT 误读成末三位都要从 C 变 T；虽然后续奇偶证明正确，初始读题存在错误。"},
+    {"group":"low","row_index":6693,"reason":"在顶点/面/岛屿的解释间长时间反复，并多次得到错误的 5，首次求解不连贯。"},
+    {"group":"low","row_index":16576,"reason":"在无序回答只保留 yes 数量这一关键条件上多次倒退，混淆 log2(n) 和 n−1，不适合作为首轮清晰范本。"},
+    {"group":"low","row_index":12817,"reason":"题目依赖外部图像，纯文本中缺少判定最快者的信息。"},
+    {"group":"high","row_index":11801,"reason":"题目包含翻译请求/说明，基础格式不够干净。"},
+    {"group":"high","row_index":3170,"reason":"分组均值问题需要对开放上界组作额外假设，不优先选。"}
+  ]
+}

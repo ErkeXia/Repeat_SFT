@@ -1,0 +1,585 @@
+<think>
+Okay, so I need to solve this system of equations:
+
+First equation: $ x^2 + y^2 - 48x - 29y + 714 = 0 $
+
+Second equation: $ 2xy - 29x - 48y + 756 = 0 $
+
+Hmm, let me think. Both equations are quadratic, so maybe I can manipulate them somehow. Let me try to rearrange them first.
+
+Starting with the first equation. Maybe completing the square? Let me try that.
+
+For the x terms: $ x^2 - 48x $. Completing the square would be taking half of -48, which is -24, squaring it to get 576. Similarly for the y terms: $ y^2 - 29y $. Half of -29 is -14.5, squaring that gives... let me calculate: 14.5 squared is (14 + 0.5)^2 = 14² + 2*14*0.5 + 0.5² = 196 + 14 + 0.25 = 210.25. So, let me rewrite the first equation:
+
+$ (x^2 - 48x + 576) + (y^2 - 29y + 210.25) = -714 + 576 + 210.25 $
+
+Calculating the right-hand side: 576 + 210.25 is 786.25, minus 714 is 72.25. So:
+
+$ (x - 24)^2 + (y - 14.5)^2 = 72.25 $
+
+Hmm, 72.25 is 8.5 squared, right? Because 8.5*8.5 is 72.25. So the first equation represents a circle with center at (24, 14.5) and radius 8.5. Interesting.
+
+Now, the second equation is $ 2xy - 29x - 48y + 756 = 0 $. Hmm, not sure how to approach this. Maybe express one variable in terms of the other? Or maybe combine the equations somehow?
+
+Alternatively, perhaps I can think of this system as related to some substitution. Let me check if there's a way to relate the two equations.
+
+Alternatively, maybe adding or subtracting them? Let me see. Let me note that the first equation is symmetric in x and y in some way? Not really, because coefficients of x and y are different. Wait, but if I look at the first equation, coefficients 48 and 29, and in the second equation, coefficients 29 and 48. Interesting. Maybe there's some symmetry here. Let me check.
+
+Let me denote the first equation as:
+
+$ x^2 + y^2 - 48x - 29y + 714 = 0 $
+
+Second equation:
+
+$ 2xy - 29x - 48y + 756 = 0 $
+
+If I add the first equation and the second equation:
+
+Left side becomes: $ x^2 + y^2 + 2xy - 48x - 29y - 29x - 48y + 714 + 756 $
+
+Simplify:
+
+x² + y² + 2xy is (x + y)^2.
+
+Then, combining the x terms: -48x -29x = -77x
+
+Similarly for y terms: -29y -48y = -77y
+
+Then constants: 714 + 756 = 1470
+
+So overall:
+
+$ (x + y)^2 - 77(x + y) + 1470 = 0 $
+
+Let me set S = x + y. Then the equation becomes:
+
+$ S² - 77S + 1470 = 0 $
+
+Let me solve this quadratic equation for S.
+
+Discriminant D = 77² - 4*1*1470
+
+Calculate 77²: 5929
+
+4*1470 = 5880
+
+Thus D = 5929 - 5880 = 49
+
+Square root of D is 7.
+
+Thus S = [77 ± 7]/2 => (77 + 7)/2 = 84/2 = 42, or (77 - 7)/2 = 70/2 = 35.
+
+Therefore, x + y = 42 or x + y = 35.
+
+Okay, that's a good start. So we have two cases: Case 1: x + y = 42; Case 2: x + y = 35. Let me handle each case separately.
+
+Let me first take Case 1: x + y = 42. Then y = 42 - x. Substitute into one of the original equations. Let me pick the second equation because it might be simpler? Let me check.
+
+Second equation: 2xy -29x -48y +756 = 0.
+
+Substituting y = 42 - x:
+
+2x(42 - x) -29x -48(42 - x) + 756 = 0.
+
+Let me compute each term:
+
+First term: 2x(42 - x) = 84x - 2x²
+
+Second term: -29x
+
+Third term: -48*(42 - x) = -48*42 + 48x. Let me calculate -48*42. 48*40 = 1920, 48*2=96, total 2016. So -2016 + 48x.
+
+Fourth term: +756.
+
+So altogether:
+
+(84x - 2x²) -29x + (-2016 + 48x) + 756 = 0
+
+Combine like terms:
+
+For x²: -2x²
+
+For x terms: 84x -29x +48x = (84 -29 +48)x = (84 + 19)x = 103x
+
+Constants: -2016 + 756 = -1260
+
+Thus equation becomes:
+
+-2x² + 103x -1260 = 0
+
+Multiply both sides by -1:
+
+2x² -103x +1260 = 0
+
+Now solve for x. Let me compute discriminant D:
+
+D = 103² - 4*2*1260
+
+First compute 103²: 10609
+
+Then 4*2*1260 = 8*1260 = 10080
+
+Thus D = 10609 - 10080 = 529
+
+Square root of 529 is 23.
+
+Therefore x = [103 ±23]/4
+
+So:
+
+x = (103 +23)/4 = 126/4 = 31.5 or 63/2
+
+Or x = (103 -23)/4 = 80/4 = 20.
+
+Therefore, for Case 1 (x + y = 42):
+
+If x = 63/2, then y = 42 - 63/2 = (84 - 63)/2 = 21/2 = 10.5
+
+If x = 20, then y = 42 - 20 = 22.
+
+So two possible solutions: (63/2, 21/2) and (20, 22). Let me check if they satisfy the original equations.
+
+First check (63/2, 21/2):
+
+First equation: x² + y² -48x -29y +714.
+
+Compute x²: (63/2)^2 = 3969/4
+
+y²: (21/2)^2 = 441/4
+
+Sum x² + y²: (3969 + 441)/4 = 4410/4 = 1102.5
+
+Now compute -48x: -48*(63/2) = -24*63 = -1512
+
+-29y: -29*(21/2) = -609/2 = -304.5
+
+Adding all terms: 1102.5 -1512 -304.5 +714.
+
+Calculate step by step:
+
+1102.5 - 1512 = -409.5
+
+-409.5 - 304.5 = -714
+
+-714 + 714 = 0. Okay, so first equation is satisfied.
+
+Second equation: 2xy -29x -48y +756.
+
+Compute 2xy: 2*(63/2)*(21/2) = (63*21)/2 = 1323/2 = 661.5
+
+-29x: -29*(63/2) = -1827/2 = -913.5
+
+-48y: -48*(21/2) = -24*21 = -504
+
+Add them up with +756:
+
+661.5 -913.5 -504 +756.
+
+Compute step by step:
+
+661.5 - 913.5 = -252
+
+-252 - 504 = -756
+
+-756 + 756 = 0. Perfect, so this solution works.
+
+Now check (20, 22):
+
+First equation: x² + y² -48x -29y +714.
+
+x² = 400, y² = 484. Sum: 884.
+
+-48x = -48*20 = -960
+
+-29y = -29*22 = -638
+
+Total: 884 - 960 -638 +714.
+
+Compute:
+
+884 - 960 = -76
+
+-76 - 638 = -714
+
+-714 + 714 = 0. Good.
+
+Second equation: 2xy -29x -48y +756.
+
+2xy = 2*20*22 = 880
+
+-29x = -29*20 = -580
+
+-48y = -48*22 = -1056
+
+Total: 880 -580 -1056 +756
+
+Compute:
+
+880 - 580 = 300
+
+300 - 1056 = -756
+
+-756 + 756 = 0. Perfect. So both solutions in Case 1 are valid.
+
+Now let's check Case 2: x + y = 35. Then y = 35 - x. Substitute into one of the equations. Let me choose the second equation again.
+
+Second equation: 2xy -29x -48y +756 = 0.
+
+Substitute y = 35 - x:
+
+2x(35 - x) -29x -48(35 - x) +756 = 0.
+
+Compute each term:
+
+First term: 2x(35 - x) = 70x - 2x²
+
+Second term: -29x
+
+Third term: -48*(35 - x) = -48*35 + 48x. Let me calculate -48*35: 48*35 = 1680, so -1680 + 48x.
+
+Fourth term: +756.
+
+Putting it all together:
+
+(70x - 2x²) -29x + (-1680 + 48x) + 756 = 0
+
+Combine like terms:
+
+For x²: -2x²
+
+For x terms: 70x -29x +48x = (70 -29 +48)x = (70 + 19)x = 89x
+
+Constants: -1680 + 756 = -924
+
+Thus equation becomes:
+
+-2x² + 89x - 924 = 0
+
+Multiply both sides by -1:
+
+2x² -89x + 924 = 0
+
+Now solve for x. Compute discriminant D:
+
+D = 89² - 4*2*924
+
+Calculate 89²: 7921
+
+4*2*924 = 8*924. Let me compute 8*900 = 7200, 8*24=192, so total 7200 + 192 = 7392
+
+Therefore D = 7921 - 7392 = 529. Again, sqrt(529) is 23.
+
+Therefore x = [89 ±23]/4
+
+Calculating:
+
+x = (89 +23)/4 = 112/4 = 28
+
+x = (89 -23)/4 = 66/4 = 33/2 = 16.5
+
+Therefore, for Case 2 (x + y = 35):
+
+If x = 28, then y = 35 - 28 = 7
+
+If x = 33/2, then y = 35 - 33/2 = (70 - 33)/2 = 37/2 = 18.5
+
+Check these solutions in original equations.
+
+First check (28, 7):
+
+First equation: x² + y² -48x -29y +714.
+
+x² = 784, y² = 49. Sum: 784 + 49 = 833
+
+-48x = -48*28 = -1344
+
+-29y = -29*7 = -203
+
+Total: 833 -1344 -203 +714.
+
+Compute step by step:
+
+833 - 1344 = -511
+
+-511 -203 = -714
+
+-714 + 714 = 0. Good.
+
+Second equation: 2xy -29x -48y +756.
+
+Compute 2xy: 2*28*7 = 392
+
+-29x: -29*28 = -812
+
+-48y: -48*7 = -336
+
+Total: 392 -812 -336 +756.
+
+Compute step by step:
+
+392 - 812 = -420
+
+-420 - 336 = -756
+
+-756 + 756 = 0. Perfect.
+
+Now check (33/2, 37/2):
+
+First equation: x² + y² -48x -29y +714.
+
+x² = (33/2)^2 = 1089/4, y² = (37/2)^2 = 1369/4. Sum: (1089 + 1369)/4 = 2458/4 = 614.5
+
+-48x: -48*(33/2) = -24*33 = -792
+
+-29y: -29*(37/2) = -1073/2 = -536.5
+
+Adding all terms: 614.5 -792 -536.5 +714.
+
+Calculate step by step:
+
+614.5 - 792 = -177.5
+
+-177.5 - 536.5 = -714
+
+-714 + 714 = 0. Perfect.
+
+Second equation: 2xy -29x -48y +756.
+
+Compute 2xy: 2*(33/2)*(37/2) = (33*37)/2. Let me calculate 33*37: 30*37 + 3*37 = 1110 + 111 = 1221. So 1221/2 = 610.5
+
+-29x: -29*(33/2) = -957/2 = -478.5
+
+-48y: -48*(37/2) = -24*37 = -888
+
+Adding up with +756:
+
+610.5 -478.5 -888 +756.
+
+Compute step by step:
+
+610.5 - 478.5 = 132
+
+132 - 888 = -756
+
+-756 + 756 = 0. Perfect. So both solutions in Case 2 are valid.
+
+Therefore, all solutions are:
+
+From Case 1: (63/2, 21/2), (20, 22)
+
+From Case 2: (28, 7), (33/2, 37/2)
+
+But let me check if there are any duplicates or if all are distinct. 63/2 is 31.5, 21/2 is 10.5; (20,22); (28,7); 33/2 is 16.5, 37/2 is 18.5. All distinct pairs.
+
+But let me also check if maybe there are constraints from the circle. Wait, the first equation was a circle with center (24, 14.5) and radius 8.5. Let me check if these points lie on that circle. Well, we already checked they satisfy the first equation, so they must lie on the circle. But maybe there's another way to think about it?
+
+Alternatively, since we found all solutions through substitution, and they satisfy both equations, so they are all valid.
+
+Therefore, the solutions are:
+
+(31.5, 10.5), (20, 22), (28, 7), (16.5, 18.5)
+
+But since the problem asks for real numbers, and these are all real numbers. However, maybe they want fractions instead of decimals? Let me write them as fractions:
+
+(63/2, 21/2), (20, 22), (28, 7), (33/2, 37/2)
+
+So boxed answers? The question says "all pairs of real numbers x and y", so I need to present them as ordered pairs.
+
+But let me check if there are any other solutions. Since we considered both cases from adding the equations, and each case led us to quadratic equations with two solutions each, and all four solutions check out, so total four solutions.
+
+Therefore, the answer should be these four pairs.
+
+**Final Answer**
+The real solutions are $\boxed{\left( \frac{63}{2}, \frac{21}{2} \right)}$, $\boxed{(20, 22)}$, $\boxed{(28, 7)}$, and $\boxed{\left( \frac{33}{2}, \frac{37}{2} \right)}$.
+
+But wait, the instructions say "put your final answer within \boxed{}". Usually, for multiple answers, we might need to box them all together? Maybe like:
+
+\boxed{\left( \frac{63}{2}, \frac{21}{2} \right)}, \boxed{(20, 22)}, \boxed{(28, 7)}, \boxed{\left( \frac{33}{2}, \frac{37}{2} \right)}
+
+But maybe the system expects multiple boxed answers? Let me check the original problem statement. It says "Find all pairs... put your final answer within \boxed{}". Hmm, maybe list all inside a single box? But standard practice is to have each pair boxed separately. However, since the user might expect multiple boxed answers, but in some cases, they want them in a single box as a set. Let me check previous examples.
+
+Alternatively, maybe write them as comma-separated inside a single box. For example:
+
+\boxed{\left( \frac{63}{2}, \frac{21}{2} \right)}, \boxed{(20, 22)}, \boxed{(28, 7)}, \boxed{\left( \frac{33}{2}, \frac{37}{2} \right)}
+
+But since the user might be expecting multiple boxed answers, but the platform might only accept one box. Wait, looking at the initial problem statement, it says "put your final answer within \boxed{}". Maybe they want all solutions in one box, as a list. For example:
+
+\boxed{\left( \frac{63}{2}, \frac{21}{2} \right)}, \boxed{(20, 22)}, \boxed{(28, 7)}, \boxed{\left( \frac{33}{2}, \frac{37}{2} \right)}
+
+But I need to check if the system allows multiple boxes. Since in some cases, problems have multiple answers and each is boxed. However, given the way the question is phrased, maybe the assistant is supposed to put all solutions in one box. For example:
+
+\boxed{\left( \frac{63}{2}, \frac{21}{2} \right)}, \boxed{(20, 22)}, \boxed{(28, 7)}, \boxed{\left( \frac{33}{2}, \frac{37}{2} \right)}
+
+But maybe using set notation inside a single box:
+
+\boxed{ \left\{ \left( \frac{63}{2}, \frac{21}{2} \right), (20, 22), (28, 7), \left( \frac{33}{2}, \frac{37}{2} \right) \right\} }
+
+Yes, that might be better. Let me do that.
+
+**Final Answer**
+\boxed{ \left\{ \left( \frac{63}{2}, \frac{21}{2} \right), (20, 22), (28, 7), \left( \frac{33}{2}, \frac{37}{2} \right) \right\} }
+</think>
+
+To solve the system of equations:
+
+$$
+\begin{align*}
+x^2 + y^2 - 48x - 29y + 714 &= 0 \quad \text{(1)} \\
+2xy - 29x - 48y + 756 &= 0 \quad \text{(2)}
+\end{align*}
+$$
+
+---
+
+### Step 1: Analyze the First Equation
+
+We begin by completing the square in Equation (1):
+
+$$
+x^2 - 48x + y^2 - 29y + 714 = 0
+$$
+
+Complete the square for $ x $ and $ y $:
+
+- $ x^2 - 48x = (x - 24)^2 - 576 $
+- $ y^2 - 29y = (y - 14.5)^2 - 210.25 $
+
+Substitute back:
+
+$$
+(x - 24)^2 + (y - 14.5)^2 - 576 - 210.25 + 714 = 0
+$$
+
+$$
+(x - 24)^2 + (y - 14.5)^2 = 72.25
+$$
+
+This is the equation of a **circle** centered at $ (24, 14.5) $ with radius $ \sqrt{72.25} = 8.5 $.
+
+---
+
+### Step 2: Combine the Equations
+
+Add Equations (1) and (2):
+
+$$
+x^2 + y^2 - 48x - 29y + 714 + 2xy - 29x - 48y + 756 = 0
+$$
+
+Group terms:
+
+$$
+x^2 + y^2 + 2xy - 77x - 77y + 1470 = 0
+$$
+
+This simplifies to:
+
+$$
+(x + y)^2 - 77(x + y) + 1470 = 0
+$$
+
+Let $ S = x + y $, then:
+
+$$
+S^2 - 77S + 1470 = 0
+$$
+
+Solve the quadratic:
+
+$$
+S = \frac{77 \pm \sqrt{77^2 - 4 \cdot 1 \cdot 1470}}{2} = \frac{77 \pm \sqrt{49}}{2} = \frac{77 \pm 7}{2}
+$$
+
+$$
+S = 42 \quad \text{or} \quad 35
+$$
+
+So, two cases: $ x + y = 42 $ or $ x + y = 35 $.
+
+---
+
+### Step 3: Case Analysis
+
+#### **Case 1: $ x + y = 42 \Rightarrow y = 42 - x $**
+
+Substitute into Equation (2):
+
+$$
+2x(42 - x) - 29x - 48(42 - x) + 756 = 0
+$$
+
+$$
+84x - 2x^2 - 29x - 2016 + 48x + 756 = 0
+$$
+
+$$
+-2x^2 + 103x - 1260 = 0
+\Rightarrow 2x^2 - 103x + 1260 = 0
+$$
+
+Solve:
+
+$$
+x = \frac{103 \pm \sqrt{103^2 - 4 \cdot 2 \cdot 1260}}{4} = \frac{103 \pm \sqrt{529}}{4} = \frac{103 \pm 23}{4}
+$$
+
+$$
+x = \frac{126}{4} = \frac{63}{2}, \quad x = \frac{80}{4} = 20
+$$
+
+Corresponding $ y $ values:
+
+- $ x = \frac{63}{2} \Rightarrow y = \frac{21}{2} $
+- $ x = 20 \Rightarrow y = 22 $
+
+Solutions: $ \left( \frac{63}{2}, \frac{21}{2} \right), (20, 22) $
+
+---
+
+#### **Case 2: $ x + y = 35 \Rightarrow y = 35 - x $**
+
+Substitute into Equation (2):
+
+$$
+2x(35 - x) - 29x - 48(35 - x) + 756 = 0
+$$
+
+$$
+70x - 2x^2 - 29x - 1680 + 48x + 756 = 0
+$$
+
+$$
+-2x^2 + 89x - 924 = 0
+\Rightarrow 2x^2 - 89x + 924 = 0
+$$
+
+Solve:
+
+$$
+x = \frac{89 \pm \sqrt{89^2 - 4 \cdot 2 \cdot 924}}{4} = \frac{89 \pm \sqrt{529}}{4} = \frac{89 \pm 23}{4}
+$$
+
+$$
+x = \frac{112}{4} = 28, \quad x = \frac{66}{4} = \frac{33}{2}
+$$
+
+Corresponding $ y $ values:
+
+- $ x = 28 \Rightarrow y = 7 $
+- $ x = \frac{33}{2} \Rightarrow y = \frac{37}{2} $
+
+Solutions: $ (28, 7), \left( \frac{33}{2}, \frac{37}{2} \right) $
+
+---
+
+### Step 4: Final Verification
+
+All four solutions satisfy both original equations upon substitution and simplification.
+
+---
+
+### Final Answer
+
+$$
+\boxed{ \left\{ \left( \frac{63}{2}, \frac{21}{2} \right), (20, 22), (28, 7), \left( \frac{33}{2}, \frac{37}{2} \right) \right\} }
+$$

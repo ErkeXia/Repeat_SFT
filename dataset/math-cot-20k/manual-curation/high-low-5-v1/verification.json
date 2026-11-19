@@ -1,0 +1,16 @@
+{
+  "date": "2026-11-19",
+  "checks": {
+    "6430": "All three stated vertices satisfy their defining lines and the circle; direct elimination gives D=E=-4,F=-17.",
+    "2988": "All four ordered pairs satisfy both equations in exact rational arithmetic; exhaustiveness follows from S=42 or 35 and two quadratic roots per branch.",
+    "4561": "Generating-function proof checked by hand; exact integer checks for n=1..100 agree (supplementary, not the proof).",
+    "14120": "All 22 initial modular powers match exact modular exponentiation; requested residue is 119.",
+    "1432": "Manual identity and domain check: x in (0,1/2], derivative -1/x^2-2<0; endpoint value 1 is attained at alpha=pi/4.",
+    "16190": "Exact related-rate result -3/4 m/s; downward speed 3/4 m/s.",
+    "15054": "Explicit 2019-term construction has 8 distinct real values and 4 absolute values; pigeonhole proof covers every 5-index choice.",
+    "17772": "Block bijection checked by hand: circular orders 4! times 2^5 independent internal choices; reflections are distinct. Incorrect later toy examples excluded from the checked chain.",
+    "506": "All four role assignments checked against truthfulness; only A knight/B liar is consistent.",
+    "10037": "Every side occurs in exactly one 5-minute slot, capacity 2 is respected, and 15 minutes meets the workload lower bound."
+  },
+  "scope": "Candidate primary arguments only; not certification of full raw responses."
+}
