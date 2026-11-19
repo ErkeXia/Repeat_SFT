@@ -1,0 +1,70 @@
+{
+  "version": "dataset-short-answer-final-v4",
+  "date": "2026-11-19",
+  "status": "complete",
+  "scope": "For rows 2988 and 506, replace the Final Answer with one boxed containing the exact dataset raw_record.answer, as explicitly requested.",
+  "previous_revision_backup": "revisions/cleanup-v3/responses.jsonl",
+  "records": [
+    {
+      "group": "high",
+      "row_index": 2988,
+      "file": "high/row-02988.response.txt",
+      "short_answer_source": "originals.jsonl:raw_record.answer",
+      "source_short_answer": "(31.5, 10.5), (20, 22), (28, 7), (16.5, 18.5)",
+      "previous_response_sha256": "0a0b4f1647c70031767f19c48d809ba5dd5c4f1d312f6a214c29b5f7cfca7fbb",
+      "edited_response_sha256": "be72409cfa658b46d817c7810422f99c03c9dc3402755c30880eac66bb87b9c9",
+      "previous_chars": 2168,
+      "edited_chars": 2050,
+      "previous_final_answer": "The real solutions are $\\boxed{\\left( \\frac{63}{2}, \\frac{21}{2} \\right)}$, $\\boxed{(20, 22)}$, $\\boxed{(28, 7)}$, and $\\boxed{\\left( \\frac{33}{2}, \\frac{37}{2} \\right)}$.",
+      "current_final_answer": "\\boxed{(31.5, 10.5), (20, 22), (28, 7), (16.5, 18.5)}",
+      "reasoning_prefix_unchanged": true
+    },
+    {
+      "group": "low",
+      "row_index": 506,
+      "file": "low/row-00506.response.txt",
+      "short_answer_source": "originals.jsonl:raw_record.answer",
+      "source_short_answer": "A",
+      "previous_response_sha256": "18f1002edb596ce51a139d98e8f7bc65d7eb0209b318a27451715ae951f4173a",
+      "edited_response_sha256": "e24f33087b4a271fd3b7566f0e542bfa7021e2e2eb3cbee6ec9c994c8cc13e8c",
+      "previous_chars": 660,
+      "edited_chars": 585,
+      "previous_final_answer": "A is the knight and B is the liar, so \\boxed{A} is a knight and \\boxed{B} is a liar.",
+      "current_final_answer": "\\boxed{A}",
+      "reasoning_prefix_unchanged": true
+    }
+  ],
+  "validation": {
+    "exact_dataset_short_answers": 2,
+    "unchanged_reasoning_prefixes": 10,
+    "unchanged_other_responses": 8,
+    "single_boxed_final_answers": 10,
+    "protected_files_unchanged": 21,
+    "status": "passed"
+  },
+  "protected_files_sha256": {
+    "cleanup-v1.json": "258bf656c47e29f9d077898a1ec3db2cd8870277991d4dc872d1b8f52dbd812e",
+    "cleanup-v2.json": "810bcf119f66dc18626524a8d6d7ed394275c3b8b9ae7f1e318edc6fc51940d9",
+    "cleanup-v3.json": "d33b3fb131cc93e3a8810533d819af9f3858fc96d994e31430bf54a13b12871c",
+    "CLEANUP_V1.md": "0785d7e918682b7154103d26655c74eed77646135e253a3f6fa550c34c5686cb",
+    "CLEANUP_V2.md": "22c7db5f984ca5a7166d59250fc981ce0e75c21a1418b899ca8ef0cbb1a8eb9e",
+    "CLEANUP_V3.md": "3d688927835db1d474d49c3391c16d0575c1dac291d3cebdb120e0b878bceb2a",
+    "originals.jsonl": "d12371cc1c7796bff70f38307fb08d16e7c284049f9af6d03d9c9fcfc4f09035",
+    "review_notes.json": "040b561ff6bb8cce19bf06cc167d148db89ec747eab27072f7625c91042d0197",
+    "verification.json": "2b27db438398f26ae2b3864cd8658a08143dde9df2eaecad004012ee3f802c5f",
+    "high\\row-01432.md": "0cb0267ea797274a2785e71451b6be8bb1a057332b1821c7633f0c329b7cff9d",
+    "high\\row-02988.md": "8ff87acda6ef3896aacb04c037a8215d88121e454cb77cc63c8329ffb161a56a",
+    "high\\row-04561.md": "3380b55ae9cf433d520b77d1c455b037cc5944dd8406f3090335e86b41c71954",
+    "high\\row-06430.md": "91dfab2fb15e543014e68483dc90c21b7efd8751e018b49bbf77e8efdaec9b2e",
+    "high\\row-14120.md": "520dbcb902527629ccfcc179099ab9a9b05886ff53da0213aa87ac6e28f0f705",
+    "low\\row-00506.md": "6c9871c415e965dd166da6734d2c748b4931deb4a51df05a37faceaedc96676c",
+    "low\\row-10037.md": "31ce7e3ad240a96a0c1dd61ae7e99ed5cbc58b45e39f49381b21a97982ff4c17",
+    "low\\row-15054.md": "e0f54cac9f7bfc1b25947c2c6165ac33124d201a7dc0e69d5e109eee3fe43f0a",
+    "low\\row-16190.md": "e85f10b901f35e102845cea2d0ba50414f7fd03aa4359db10085f0d7974f82c1",
+    "low\\row-17772.md": "fb0c2a67d4817e7c9e256dc581c656a041dd92f082530f14d1dbba65662b8b89",
+    "revisions\\cleanup-v1\\responses.jsonl": "5aa0eb15e95d339ee6dd9c668af28188522fdf441376fcacd61268976d2c0b13",
+    "revisions\\cleanup-v2\\responses.jsonl": "da992f9addd90069baef83f99a40ad7db0d8161ccf62990db67ce9e17a0c1943"
+  },
+  "model_or_tokenizer_loaded": false,
+  "training_ready": false
+}

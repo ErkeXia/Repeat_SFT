@@ -251,7 +251,14 @@
       },
       "review_file": "high/row-06430.md",
       "editable_response_file": "high/row-06430.response.txt",
-      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready"
+      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready",
+      "current_edit": {
+        "revision": "boxed-final-cleanup-v3",
+        "response_sha256": "03421166d581764eba2365b3004135f71c7e6f226693e6f9cb7b5bf01cc3685b",
+        "response_chars": 1950,
+        "token_count": null,
+        "training_ready": false
+      }
     },
     {
       "group": "high",
@@ -285,7 +292,14 @@
       },
       "review_file": "high/row-02988.md",
       "editable_response_file": "high/row-02988.response.txt",
-      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready"
+      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready",
+      "current_edit": {
+        "revision": "dataset-short-answer-final-v4",
+        "response_sha256": "be72409cfa658b46d817c7810422f99c03c9dc3402755c30880eac66bb87b9c9",
+        "response_chars": 2050,
+        "token_count": null,
+        "training_ready": false
+      }
     },
     {
       "group": "high",
@@ -319,7 +333,14 @@
       },
       "review_file": "high/row-04561.md",
       "editable_response_file": "high/row-04561.response.txt",
-      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready"
+      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready",
+      "current_edit": {
+        "revision": "boxed-final-cleanup-v3",
+        "response_sha256": "1f0d54e6b6e7238c5bc4de452e3b47cc1a428280b33f057050ec67088862aa38",
+        "response_chars": 2386,
+        "token_count": null,
+        "training_ready": false
+      }
     },
     {
       "group": "high",
@@ -353,7 +374,14 @@
       },
       "review_file": "high/row-14120.md",
       "editable_response_file": "high/row-14120.response.txt",
-      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready"
+      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready",
+      "current_edit": {
+        "revision": "boxed-final-cleanup-v3",
+        "response_sha256": "cc323ca93cfd79201ee3a28086d347646c6d1150856ed5341470f60798ed7aea",
+        "response_chars": 1261,
+        "token_count": null,
+        "training_ready": false
+      }
     },
     {
       "group": "high",
@@ -387,7 +415,14 @@
       },
       "review_file": "high/row-01432.md",
       "editable_response_file": "high/row-01432.response.txt",
-      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready"
+      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready",
+      "current_edit": {
+        "revision": "boxed-final-cleanup-v3",
+        "response_sha256": "94920796e974406e6ff50cde5aabbf0706eccb83f9b5de52b7bf0cf53f48b4bf",
+        "response_chars": 1296,
+        "token_count": null,
+        "training_ready": false
+      }
     },
     {
       "group": "low",
@@ -416,7 +451,14 @@
       },
       "review_file": "low/row-16190.md",
       "editable_response_file": "low/row-16190.response.txt",
-      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready"
+      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready",
+      "current_edit": {
+        "revision": "boxed-final-cleanup-v3",
+        "response_sha256": "cc469ec65af90552680f687de23a45b484ee1e4824bf296a68ec02c240696593",
+        "response_chars": 903,
+        "token_count": null,
+        "training_ready": false
+      }
     },
     {
       "group": "low",
@@ -450,7 +492,14 @@
       },
       "review_file": "low/row-15054.md",
       "editable_response_file": "low/row-15054.response.txt",
-      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready"
+      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready",
+      "current_edit": {
+        "revision": "boxed-final-cleanup-v3",
+        "response_sha256": "0180de7bd6e5cad8c2be4375628d52139022ab70b349220f20f47d95c22281b0",
+        "response_chars": 1017,
+        "token_count": null,
+        "training_ready": false
+      }
     },
     {
       "group": "low",
@@ -484,7 +533,14 @@
       },
       "review_file": "low/row-17772.md",
       "editable_response_file": "low/row-17772.response.txt",
-      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready"
+      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready",
+      "current_edit": {
+        "revision": "boxed-final-cleanup-v3",
+        "response_sha256": "576739a2f48ec434a72faefc9a21f0ebaf05ef33de57e7861bbf12db9d0df4e1",
+        "response_chars": 899,
+        "token_count": null,
+        "training_ready": false
+      }
     },
     {
       "group": "low",
@@ -518,7 +574,14 @@
       },
       "review_file": "low/row-00506.md",
       "editable_response_file": "low/row-00506.response.txt",
-      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready"
+      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready",
+      "current_edit": {
+        "revision": "dataset-short-answer-final-v4",
+        "response_sha256": "e24f33087b4a271fd3b7566f0e542bfa7021e2e2eb3cbee6ec9c994c8cc13e8c",
+        "response_chars": 585,
+        "token_count": null,
+        "training_ready": false
+      }
     },
     {
       "group": "low",
@@ -552,9 +615,25 @@
       },
       "review_file": "low/row-10037.md",
       "editable_response_file": "low/row-10037.response.txt",
-      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready"
+      "editable_state_at_export": "identical_to_original; not rewritten; not training-ready",
+      "current_edit": {
+        "revision": "boxed-final-cleanup-v3",
+        "response_sha256": "8e85d7f9cf37ef1bcd9e1333059ed6ab4027a57a7d743853b67a5347f06fe22a",
+        "response_chars": 1020,
+        "token_count": null,
+        "training_ready": false
+      }
     }
   ],
   "review_notes_file": "review_notes.json",
-  "originals_file": "originals.jsonl"
+  "originals_file": "originals.jsonl",
+  "current_edit_revision": {
+    "version": "dataset-short-answer-final-v4",
+    "log": "cleanup-v4.json",
+    "notes": "CLEANUP_V4.md",
+    "previous_revision_backup": "revisions/cleanup-v3/responses.jsonl",
+    "status": "complete",
+    "pending_row_indices": [],
+    "training_ready": false
+  }
 }

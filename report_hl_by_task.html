@@ -1,0 +1,512 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>High / Low 四任务评测 · 按任务与 Epoch 对照</title><style>
+:root{color-scheme:light;--bg:#f5f6f8;--ink:#182533;--muted:#617083;--border:#dce2e8;--high:#5a4dad;--low:#08766c;--high-bg:#f4f1ff;--low-bg:#edf8f5;--paper:#fff}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:20px}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}
+main{max-width:1480px;margin:0 auto;padding:42px 32px 40px}header{margin-bottom:28px}.eyebrow{font-size:12px;letter-spacing:.13em;color:var(--muted);font-weight:700}h1{font-size:30px;line-height:1.3;margin:9px 0 12px;letter-spacing:-.02em}.intro{color:var(--muted);max-width:1000px;margin:0}.toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin-top:24px}nav{display:flex;flex-wrap:wrap;gap:9px}nav a{color:var(--ink);text-decoration:none;border:1px solid var(--border);background:var(--paper);padding:6px 14px;border-radius:7px;font-weight:600}nav a:hover{border-color:#8091a5}.controls{display:flex;align-items:center;gap:18px;color:var(--muted);font-size:13px}label{cursor:pointer;white-space:nowrap}input{accent-color:var(--high);vertical-align:middle;margin-right:6px}button{font:inherit;cursor:pointer;border:1px solid var(--border);color:var(--ink);background:white;padding:7px 12px;border-radius:7px}button:hover{background:#edf0f4}:focus-visible{outline:3px solid #9ab4df;outline-offset:3px}.format-note{margin:14px 0 0;color:var(--muted);font-size:12px}.high-text{color:var(--high)}.low-text{color:var(--low)}
+section{background:var(--paper);border:1px solid var(--border);border-radius:12px;margin:0 0 26px;overflow:hidden;box-shadow:0 2px 3px #18253303}.section-head{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:19px 24px 17px}.section-number{color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.1em}h2{margin:2px 0 0;font-size:23px;line-height:1.3;letter-spacing:-.015em}.denominator{margin:0;font-size:13px;white-space:nowrap}.divider{color:#a5aeb9;margin:0 6px}.table-scroll{overflow:auto;max-width:100%;border-top:1px solid var(--border)}table{width:100%;min-width:1040px;border-collapse:separate;border-spacing:0;table-layout:fixed;font-variant-numeric:tabular-nums}caption{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}.epoch-col{width:72px}.metric-col{width:calc((100% - 72px)/10)}th,td{text-align:right;padding:10px 12px;border-bottom:1px solid #e9edf2;white-space:nowrap}thead th{background:#f7f8fa;font-size:12px;font-weight:650}thead tr:first-child th{height:43px}thead tr:last-child th{padding-top:7px;padding-bottom:7px}.metric-group{text-align:center;border-left:1px solid var(--border)}.unit{font-size:10px;color:var(--muted);font-weight:400;margin-left:7px}.group-end{border-right:1px solid var(--border)}tr>:last-child{border-right:0}.epoch-cell{position:sticky;left:0;text-align:center;font-weight:700;background:#fbfcfd;z-index:1;border-right:1px solid var(--border)}thead .epoch-cell{background:#f7f8fa;z-index:2}td.high{background:#fdfcff}td.low{background:#fcfefd}td.accuracy.high{background:var(--high-bg);color:var(--high);font-weight:700}td.accuracy.low{background:var(--low-bg);color:var(--low);font-weight:700}tbody tr:hover td{box-shadow:inset 0 0 0 999px #1d344a06}tbody tr:last-child>*{border-bottom:0}body.raw table{min-width:1640px}body.raw .metric-col{width:156px}
+footer{font-size:12px;color:var(--muted)}footer p{margin:8px 0}details{background:var(--paper);border:1px solid var(--border);padding:14px 18px;border-radius:9px;margin-top:18px}summary{cursor:pointer;font-weight:600;color:var(--ink)}details h4{margin-bottom:6px}details ul{padding-left:19px}details li{margin-bottom:5px}code{font:11px/1.6 ui-monospace,Consolas,monospace;overflow-wrap:anywhere;white-space:normal}.source-meta{overflow-wrap:anywhere}.paths{margin-top:12px}.noscript{color:#855500}
+@media(max-width:700px){main{padding:24px 14px}h1{font-size:25px}.toolbar{align-items:flex-start}.controls{flex-wrap:wrap;gap:12px}.section-head{padding:15px 16px;display:block}.denominator{margin-top:10px;font-size:12px}h2{font-size:21px}section{border-radius:9px;margin-bottom:22px}nav a{font-size:12px;padding:5px 10px}.format-note{line-height:1.7}}
+@media print{@page{size:A4 landscape;margin:10mm}body{background:white;font-size:10px}main{max-width:none;padding:0}header{margin-bottom:16px}.toolbar,.format-note,details{display:none}section{break-inside:avoid;box-shadow:none;margin-bottom:12px;border-radius:4px}.section-head{padding:9px 12px}h1{font-size:22px}h2{font-size:17px}.table-scroll{overflow:visible}table,body.raw table{min-width:0;font-size:10px}.metric-col,body.raw .metric-col{width:calc((100% - 50px)/10)}.epoch-col{width:50px}th,td{padding:6px}thead th{font-size:10px}.epoch-cell{position:static}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body><main><header><div class="eyebrow">HIGH / LOW · CHECKPOINT EVALUATION</div><h1>High / Low 四任务评测</h1><p class="intro">每个任务一张表，每行对应同一个 epoch，High 与 Low 按指标并排对照。每题一次采样，并发 8，生成上限 8,192 新 token。</p><div class="toolbar"><nav aria-label="跳转任务"><a href="#math500">MATH500</a><a href="#gpqa">GPQA</a><a href="#bbh">BBH</a><a href="#livecodebench">LiveCodeBench</a></nav><div class="controls"><label><input id="raw-values" type="checkbox">显示原始小数</label><button id="download-csv" type="button">下载对照 CSV</button></div></div><p id="format-description" class="format-note" aria-live="polite">比例显示为百分比（两位小数），平均长度保留两位小数；鼠标悬停可查看原始值。</p><noscript><p class="noscript">表格可直接阅读；原始小数切换和 CSV 下载需要启用 JavaScript。</p></noscript></header><section id="math500" aria-labelledby="heading-math500">
+<div class="section-head">
+<div><div class="section-number">TASK 01</div><h2 id="heading-math500">MATH500</h2></div>
+<p class="denominator">每个 epoch：<span class="high-text">High 128 题</span><span class="divider"> / </span><span class="low-text">Low 128 题</span></p>
+</div>
+<div class="table-scroll" tabindex="0" role="region" aria-label="MATH500 的 High 与 Low 逐 epoch 对照表，可横向滚动">
+<table data-task="math500"><caption>MATH500 · 同一 epoch 的 High / Low 对照</caption><colgroup><col class="epoch-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"></colgroup>
+<thead><tr><th rowspan="2" scope="col" class="epoch-cell">Epoch</th>
+<th colspan="2" scope="colgroup" class="metric-group">正确率</th>
+<th colspan="2" scope="colgroup" class="metric-group">平均长度<span class="unit">tokens</span></th>
+<th colspan="2" scope="colgroup" class="metric-group">正常结束率</th>
+<th colspan="2" scope="colgroup" class="metric-group">截断率</th>
+<th colspan="2" scope="colgroup" class="metric-group">答案提取率</th>
+</tr><tr>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+</tr></thead><tbody>
+<tr data-epoch="1"><th scope="row" class="epoch-cell">01</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.625" data-display="62.50%" title="High · 正确率 · 原始值 0.625 · 80/128 题">62.50%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.6484375" data-display="64.84%" title="Low · 正确率 · 原始值 0.6484375 · 83/128 题">64.84%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="968.7109375" data-display="968.71" title="High · 平均长度 · 原始值 968.7109375">968.71</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="719.2421875" data-display="719.24" title="Low · 平均长度 · 原始值 719.2421875">719.24</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.953125" data-display="95.31%" title="High · 正常结束率 · 原始值 0.953125">95.31%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.9765625" data-display="97.66%" title="Low · 正常结束率 · 原始值 0.9765625">97.66%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.046875" data-display="4.69%" title="High · 截断率 · 原始值 0.046875">4.69%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.0234375" data-display="2.34%" title="Low · 截断率 · 原始值 0.0234375">2.34%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.9296875" data-display="92.97%" title="High · 答案提取率 · 原始值 0.9296875">92.97%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.9609375" data-display="96.09%" title="Low · 答案提取率 · 原始值 0.9609375">96.09%</td>
+</tr>
+<tr data-epoch="2"><th scope="row" class="epoch-cell">02</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.4921875" data-display="49.22%" title="High · 正确率 · 原始值 0.4921875 · 63/128 题">49.22%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.640625" data-display="64.06%" title="Low · 正确率 · 原始值 0.640625 · 82/128 题">64.06%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="7262.5859375" data-display="7,262.59" title="High · 平均长度 · 原始值 7262.5859375">7,262.59</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="5492.90625" data-display="5,492.91" title="Low · 平均长度 · 原始值 5492.90625">5,492.91</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.1328125" data-display="13.28%" title="High · 正常结束率 · 原始值 0.1328125">13.28%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.4140625" data-display="41.41%" title="Low · 正常结束率 · 原始值 0.4140625">41.41%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.8671875" data-display="86.72%" title="High · 截断率 · 原始值 0.8671875">86.72%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.5859375" data-display="58.59%" title="Low · 截断率 · 原始值 0.5859375">58.59%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.71875" data-display="71.88%" title="High · 答案提取率 · 原始值 0.71875">71.88%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.8203125" data-display="82.03%" title="Low · 答案提取率 · 原始值 0.8203125">82.03%</td>
+</tr>
+<tr data-epoch="4"><th scope="row" class="epoch-cell">04</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.6171875" data-display="61.72%" title="High · 正确率 · 原始值 0.6171875 · 79/128 题">61.72%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.6328125" data-display="63.28%" title="Low · 正确率 · 原始值 0.6328125 · 81/128 题">63.28%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="7971.1328125" data-display="7,971.13" title="High · 平均长度 · 原始值 7971.1328125">7,971.13</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="6927.4765625" data-display="6,927.48" title="Low · 平均长度 · 原始值 6927.4765625">6,927.48</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.0390625" data-display="3.91%" title="High · 正常结束率 · 原始值 0.0390625">3.91%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.203125" data-display="20.31%" title="Low · 正常结束率 · 原始值 0.203125">20.31%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.9609375" data-display="96.09%" title="High · 截断率 · 原始值 0.9609375">96.09%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.796875" data-display="79.69%" title="Low · 截断率 · 原始值 0.796875">79.69%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.7734375" data-display="77.34%" title="High · 答案提取率 · 原始值 0.7734375">77.34%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.7578125" data-display="75.78%" title="Low · 答案提取率 · 原始值 0.7578125">75.78%</td>
+</tr>
+<tr data-epoch="8"><th scope="row" class="epoch-cell">08</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.65625" data-display="65.63%" title="High · 正确率 · 原始值 0.65625 · 84/128 题">65.63%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.703125" data-display="70.31%" title="Low · 正确率 · 原始值 0.703125 · 90/128 题">70.31%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="8191.7890625" data-display="8,191.79" title="High · 平均长度 · 原始值 8191.7890625">8,191.79</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7540.0625" data-display="7,540.06" title="Low · 平均长度 · 原始值 7540.0625">7,540.06</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.0078125" data-display="0.78%" title="High · 正常结束率 · 原始值 0.0078125">0.78%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.1328125" data-display="13.28%" title="Low · 正常结束率 · 原始值 0.1328125">13.28%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.9921875" data-display="99.22%" title="High · 截断率 · 原始值 0.9921875">99.22%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.8671875" data-display="86.72%" title="Low · 截断率 · 原始值 0.8671875">86.72%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.765625" data-display="76.56%" title="High · 答案提取率 · 原始值 0.765625">76.56%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.828125" data-display="82.81%" title="Low · 答案提取率 · 原始值 0.828125">82.81%</td>
+</tr>
+<tr data-epoch="10"><th scope="row" class="epoch-cell">10</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.671875" data-display="67.19%" title="High · 正确率 · 原始值 0.671875 · 86/128 题">67.19%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.7578125" data-display="75.78%" title="Low · 正确率 · 原始值 0.7578125 · 97/128 题">75.78%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="8192" data-display="8,192.00" title="High · 平均长度 · 原始值 8192">8,192.00</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7788.6015625" data-display="7,788.60" title="Low · 平均长度 · 原始值 7788.6015625">7,788.60</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.0" data-display="0.00%" title="High · 正常结束率 · 原始值 0.0">0.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.1015625" data-display="10.16%" title="Low · 正常结束率 · 原始值 0.1015625">10.16%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="1.0" data-display="100.00%" title="High · 截断率 · 原始值 1.0">100.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.8984375" data-display="89.84%" title="Low · 截断率 · 原始值 0.8984375">89.84%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.8359375" data-display="83.59%" title="High · 答案提取率 · 原始值 0.8359375">83.59%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.8828125" data-display="88.28%" title="Low · 答案提取率 · 原始值 0.8828125">88.28%</td>
+</tr>
+<tr data-epoch="12"><th scope="row" class="epoch-cell">12</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.7109375" data-display="71.09%" title="High · 正确率 · 原始值 0.7109375 · 91/128 题">71.09%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.71875" data-display="71.88%" title="Low · 正确率 · 原始值 0.71875 · 92/128 题">71.88%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="8192" data-display="8,192.00" title="High · 平均长度 · 原始值 8192">8,192.00</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7821.8359375" data-display="7,821.84" title="Low · 平均长度 · 原始值 7821.8359375">7,821.84</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.0" data-display="0.00%" title="High · 正常结束率 · 原始值 0.0">0.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.0859375" data-display="8.59%" title="Low · 正常结束率 · 原始值 0.0859375">8.59%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="1.0" data-display="100.00%" title="High · 截断率 · 原始值 1.0">100.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.9140625" data-display="91.41%" title="Low · 截断率 · 原始值 0.9140625">91.41%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.796875" data-display="79.69%" title="High · 答案提取率 · 原始值 0.796875">79.69%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.828125" data-display="82.81%" title="Low · 答案提取率 · 原始值 0.828125">82.81%</td>
+</tr>
+<tr data-epoch="14"><th scope="row" class="epoch-cell">14</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.7421875" data-display="74.22%" title="High · 正确率 · 原始值 0.7421875 · 95/128 题">74.22%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.7265625" data-display="72.66%" title="Low · 正确率 · 原始值 0.7265625 · 93/128 题">72.66%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="8192" data-display="8,192.00" title="High · 平均长度 · 原始值 8192">8,192.00</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="8177.2265625" data-display="8,177.23" title="Low · 平均长度 · 原始值 8177.2265625">8,177.23</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.0" data-display="0.00%" title="High · 正常结束率 · 原始值 0.0">0.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.0078125" data-display="0.78%" title="Low · 正常结束率 · 原始值 0.0078125">0.78%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="1.0" data-display="100.00%" title="High · 截断率 · 原始值 1.0">100.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.9921875" data-display="99.22%" title="Low · 截断率 · 原始值 0.9921875">99.22%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.84375" data-display="84.38%" title="High · 答案提取率 · 原始值 0.84375">84.38%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.859375" data-display="85.94%" title="Low · 答案提取率 · 原始值 0.859375">85.94%</td>
+</tr>
+<tr data-epoch="16"><th scope="row" class="epoch-cell">16</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.75" data-display="75.00%" title="High · 正确率 · 原始值 0.75 · 96/128 题">75.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.796875" data-display="79.69%" title="Low · 正确率 · 原始值 0.796875 · 102/128 题">79.69%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="8192" data-display="8,192.00" title="High · 平均长度 · 原始值 8192">8,192.00</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="8179.015625" data-display="8,179.02" title="Low · 平均长度 · 原始值 8179.015625">8,179.02</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.0" data-display="0.00%" title="High · 正常结束率 · 原始值 0.0">0.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.0078125" data-display="0.78%" title="Low · 正常结束率 · 原始值 0.0078125">0.78%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="1.0" data-display="100.00%" title="High · 截断率 · 原始值 1.0">100.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.9921875" data-display="99.22%" title="Low · 截断率 · 原始值 0.9921875">99.22%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.8515625" data-display="85.16%" title="High · 答案提取率 · 原始值 0.8515625">85.16%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.8671875" data-display="86.72%" title="Low · 答案提取率 · 原始值 0.8671875">86.72%</td>
+</tr>
+</tbody></table></div></section><section id="gpqa" aria-labelledby="heading-gpqa">
+<div class="section-head">
+<div><div class="section-number">TASK 02</div><h2 id="heading-gpqa">GPQA</h2></div>
+<p class="denominator">每个 epoch：<span class="high-text">High 64 题</span><span class="divider"> / </span><span class="low-text">Low 64 题</span></p>
+</div>
+<div class="table-scroll" tabindex="0" role="region" aria-label="GPQA 的 High 与 Low 逐 epoch 对照表，可横向滚动">
+<table data-task="gpqa"><caption>GPQA · 同一 epoch 的 High / Low 对照</caption><colgroup><col class="epoch-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"></colgroup>
+<thead><tr><th rowspan="2" scope="col" class="epoch-cell">Epoch</th>
+<th colspan="2" scope="colgroup" class="metric-group">正确率</th>
+<th colspan="2" scope="colgroup" class="metric-group">平均长度<span class="unit">tokens</span></th>
+<th colspan="2" scope="colgroup" class="metric-group">正常结束率</th>
+<th colspan="2" scope="colgroup" class="metric-group">截断率</th>
+<th colspan="2" scope="colgroup" class="metric-group">答案提取率</th>
+</tr><tr>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+</tr></thead><tbody>
+<tr data-epoch="1"><th scope="row" class="epoch-cell">01</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.171875" data-display="17.19%" title="High · 正确率 · 原始值 0.171875 · 11/64 题">17.19%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.15625" data-display="15.63%" title="Low · 正确率 · 原始值 0.15625 · 10/64 题">15.63%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="1113.953125" data-display="1,113.95" title="High · 平均长度 · 原始值 1113.953125">1,113.95</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="992.9375" data-display="992.94" title="Low · 平均长度 · 原始值 992.9375">992.94</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.921875" data-display="92.19%" title="High · 正常结束率 · 原始值 0.921875">92.19%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.9375" data-display="93.75%" title="Low · 正常结束率 · 原始值 0.9375">93.75%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.078125" data-display="7.81%" title="High · 截断率 · 原始值 0.078125">7.81%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.0625" data-display="6.25%" title="Low · 截断率 · 原始值 0.0625">6.25%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.6875" data-display="68.75%" title="High · 答案提取率 · 原始值 0.6875">68.75%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.65625" data-display="65.63%" title="Low · 答案提取率 · 原始值 0.65625">65.63%</td>
+</tr>
+<tr data-epoch="2"><th scope="row" class="epoch-cell">02</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.140625" data-display="14.06%" title="High · 正确率 · 原始值 0.140625 · 9/64 题">14.06%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.15625" data-display="15.63%" title="Low · 正确率 · 原始值 0.15625 · 10/64 题">15.63%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="6892.734375" data-display="6,892.73" title="High · 平均长度 · 原始值 6892.734375">6,892.73</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="6332.53125" data-display="6,332.53" title="Low · 平均长度 · 原始值 6332.53125">6,332.53</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.1875" data-display="18.75%" title="High · 正常结束率 · 原始值 0.1875">18.75%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.265625" data-display="26.56%" title="Low · 正常结束率 · 原始值 0.265625">26.56%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.8125" data-display="81.25%" title="High · 截断率 · 原始值 0.8125">81.25%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.734375" data-display="73.44%" title="Low · 截断率 · 原始值 0.734375">73.44%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.40625" data-display="40.63%" title="High · 答案提取率 · 原始值 0.40625">40.63%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.375" data-display="37.50%" title="Low · 答案提取率 · 原始值 0.375">37.50%</td>
+</tr>
+<tr data-epoch="4"><th scope="row" class="epoch-cell">04</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.296875" data-display="29.69%" title="High · 正确率 · 原始值 0.296875 · 19/64 题">29.69%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.1875" data-display="18.75%" title="Low · 正确率 · 原始值 0.1875 · 12/64 题">18.75%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="8034.765625" data-display="8,034.77" title="High · 平均长度 · 原始值 8034.765625">8,034.77</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7120.453125" data-display="7,120.45" title="Low · 平均长度 · 原始值 7120.453125">7,120.45</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.03125" data-display="3.13%" title="High · 正常结束率 · 原始值 0.03125">3.13%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.15625" data-display="15.63%" title="Low · 正常结束率 · 原始值 0.15625">15.63%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.96875" data-display="96.88%" title="High · 截断率 · 原始值 0.96875">96.88%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.84375" data-display="84.38%" title="Low · 截断率 · 原始值 0.84375">84.38%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.40625" data-display="40.63%" title="High · 答案提取率 · 原始值 0.40625">40.63%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.484375" data-display="48.44%" title="Low · 答案提取率 · 原始值 0.484375">48.44%</td>
+</tr>
+<tr data-epoch="8"><th scope="row" class="epoch-cell">08</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.140625" data-display="14.06%" title="High · 正确率 · 原始值 0.140625 · 9/64 题">14.06%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.265625" data-display="26.56%" title="Low · 正确率 · 原始值 0.265625 · 17/64 题">26.56%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="8192" data-display="8,192.00" title="High · 平均长度 · 原始值 8192">8,192.00</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="8115.390625" data-display="8,115.39" title="Low · 平均长度 · 原始值 8115.390625">8,115.39</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.0" data-display="0.00%" title="High · 正常结束率 · 原始值 0.0">0.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.015625" data-display="1.56%" title="Low · 正常结束率 · 原始值 0.015625">1.56%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="1.0" data-display="100.00%" title="High · 截断率 · 原始值 1.0">100.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.984375" data-display="98.44%" title="Low · 截断率 · 原始值 0.984375">98.44%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.328125" data-display="32.81%" title="High · 答案提取率 · 原始值 0.328125">32.81%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.484375" data-display="48.44%" title="Low · 答案提取率 · 原始值 0.484375">48.44%</td>
+</tr>
+<tr data-epoch="10"><th scope="row" class="epoch-cell">10</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.1875" data-display="18.75%" title="High · 正确率 · 原始值 0.1875 · 12/64 题">18.75%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.328125" data-display="32.81%" title="Low · 正确率 · 原始值 0.328125 · 21/64 题">32.81%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="8192" data-display="8,192.00" title="High · 平均长度 · 原始值 8192">8,192.00</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="8022.546875" data-display="8,022.55" title="Low · 平均长度 · 原始值 8022.546875">8,022.55</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.0" data-display="0.00%" title="High · 正常结束率 · 原始值 0.0">0.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.046875" data-display="4.69%" title="Low · 正常结束率 · 原始值 0.046875">4.69%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="1.0" data-display="100.00%" title="High · 截断率 · 原始值 1.0">100.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.953125" data-display="95.31%" title="Low · 截断率 · 原始值 0.953125">95.31%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.421875" data-display="42.19%" title="High · 答案提取率 · 原始值 0.421875">42.19%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.609375" data-display="60.94%" title="Low · 答案提取率 · 原始值 0.609375">60.94%</td>
+</tr>
+<tr data-epoch="12"><th scope="row" class="epoch-cell">12</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.234375" data-display="23.44%" title="High · 正确率 · 原始值 0.234375 · 15/64 题">23.44%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.21875" data-display="21.88%" title="Low · 正确率 · 原始值 0.21875 · 14/64 题">21.88%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="8192" data-display="8,192.00" title="High · 平均长度 · 原始值 8192">8,192.00</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="8192" data-display="8,192.00" title="Low · 平均长度 · 原始值 8192">8,192.00</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.0" data-display="0.00%" title="High · 正常结束率 · 原始值 0.0">0.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.0" data-display="0.00%" title="Low · 正常结束率 · 原始值 0.0">0.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="1.0" data-display="100.00%" title="High · 截断率 · 原始值 1.0">100.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="1.0" data-display="100.00%" title="Low · 截断率 · 原始值 1.0">100.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.5625" data-display="56.25%" title="High · 答案提取率 · 原始值 0.5625">56.25%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.4375" data-display="43.75%" title="Low · 答案提取率 · 原始值 0.4375">43.75%</td>
+</tr>
+<tr data-epoch="14"><th scope="row" class="epoch-cell">14</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.25" data-display="25.00%" title="High · 正确率 · 原始值 0.25 · 16/64 题">25.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.265625" data-display="26.56%" title="Low · 正确率 · 原始值 0.265625 · 17/64 题">26.56%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="8192" data-display="8,192.00" title="High · 平均长度 · 原始值 8192">8,192.00</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="8192" data-display="8,192.00" title="Low · 平均长度 · 原始值 8192">8,192.00</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.0" data-display="0.00%" title="High · 正常结束率 · 原始值 0.0">0.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.0" data-display="0.00%" title="Low · 正常结束率 · 原始值 0.0">0.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="1.0" data-display="100.00%" title="High · 截断率 · 原始值 1.0">100.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="1.0" data-display="100.00%" title="Low · 截断率 · 原始值 1.0">100.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.546875" data-display="54.69%" title="High · 答案提取率 · 原始值 0.546875">54.69%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.640625" data-display="64.06%" title="Low · 答案提取率 · 原始值 0.640625">64.06%</td>
+</tr>
+<tr data-epoch="16"><th scope="row" class="epoch-cell">16</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.25" data-display="25.00%" title="High · 正确率 · 原始值 0.25 · 16/64 题">25.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.34375" data-display="34.38%" title="Low · 正确率 · 原始值 0.34375 · 22/64 题">34.38%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="8192" data-display="8,192.00" title="High · 平均长度 · 原始值 8192">8,192.00</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="8180.296875" data-display="8,180.30" title="Low · 平均长度 · 原始值 8180.296875">8,180.30</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.0" data-display="0.00%" title="High · 正常结束率 · 原始值 0.0">0.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.015625" data-display="1.56%" title="Low · 正常结束率 · 原始值 0.015625">1.56%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="1.0" data-display="100.00%" title="High · 截断率 · 原始值 1.0">100.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.984375" data-display="98.44%" title="Low · 截断率 · 原始值 0.984375">98.44%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.515625" data-display="51.56%" title="High · 答案提取率 · 原始值 0.515625">51.56%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.640625" data-display="64.06%" title="Low · 答案提取率 · 原始值 0.640625">64.06%</td>
+</tr>
+</tbody></table></div></section><section id="bbh" aria-labelledby="heading-bbh">
+<div class="section-head">
+<div><div class="section-number">TASK 03</div><h2 id="heading-bbh">BBH</h2></div>
+<p class="denominator">每个 epoch：<span class="high-text">High 100 题</span><span class="divider"> / </span><span class="low-text">Low 100 题</span></p>
+</div>
+<div class="table-scroll" tabindex="0" role="region" aria-label="BBH 的 High 与 Low 逐 epoch 对照表，可横向滚动">
+<table data-task="bbh"><caption>BBH · 同一 epoch 的 High / Low 对照</caption><colgroup><col class="epoch-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"></colgroup>
+<thead><tr><th rowspan="2" scope="col" class="epoch-cell">Epoch</th>
+<th colspan="2" scope="colgroup" class="metric-group">正确率</th>
+<th colspan="2" scope="colgroup" class="metric-group">平均长度<span class="unit">tokens</span></th>
+<th colspan="2" scope="colgroup" class="metric-group">正常结束率</th>
+<th colspan="2" scope="colgroup" class="metric-group">截断率</th>
+<th colspan="2" scope="colgroup" class="metric-group">答案提取率</th>
+</tr><tr>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+</tr></thead><tbody>
+<tr data-epoch="1"><th scope="row" class="epoch-cell">01</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.19" data-display="19.00%" title="High · 正确率 · 原始值 0.19 · 19/100 题">19.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.22" data-display="22.00%" title="Low · 正确率 · 原始值 0.22 · 22/100 题">22.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="2017.92" data-display="2,017.92" title="High · 平均长度 · 原始值 2017.92">2,017.92</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="1943.82" data-display="1,943.82" title="Low · 平均长度 · 原始值 1943.82">1,943.82</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.77" data-display="77.00%" title="High · 正常结束率 · 原始值 0.77">77.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.78" data-display="78.00%" title="Low · 正常结束率 · 原始值 0.78">78.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.23" data-display="23.00%" title="High · 截断率 · 原始值 0.23">23.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.22" data-display="22.00%" title="Low · 截断率 · 原始值 0.22">22.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.39" data-display="39.00%" title="High · 答案提取率 · 原始值 0.39">39.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.42" data-display="42.00%" title="Low · 答案提取率 · 原始值 0.42">42.00%</td>
+</tr>
+<tr data-epoch="2"><th scope="row" class="epoch-cell">02</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.26" data-display="26.00%" title="High · 正确率 · 原始值 0.26 · 26/100 题">26.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.32" data-display="32.00%" title="Low · 正确率 · 原始值 0.32 · 32/100 题">32.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="6789.39" data-display="6,789.39" title="High · 平均长度 · 原始值 6789.39">6,789.39</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="4939" data-display="4,939.00" title="Low · 平均长度 · 原始值 4939">4,939.00</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.18" data-display="18.00%" title="High · 正常结束率 · 原始值 0.18">18.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.44" data-display="44.00%" title="Low · 正常结束率 · 原始值 0.44">44.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.82" data-display="82.00%" title="High · 截断率 · 原始值 0.82">82.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.56" data-display="56.00%" title="Low · 截断率 · 原始值 0.56">56.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.34" data-display="34.00%" title="High · 答案提取率 · 原始值 0.34">34.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.41" data-display="41.00%" title="Low · 答案提取率 · 原始值 0.41">41.00%</td>
+</tr>
+<tr data-epoch="4"><th scope="row" class="epoch-cell">04</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.37" data-display="37.00%" title="High · 正确率 · 原始值 0.37 · 37/100 题">37.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.35" data-display="35.00%" title="Low · 正确率 · 原始值 0.35 · 35/100 题">35.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="7364.03" data-display="7,364.03" title="High · 平均长度 · 原始值 7364.03">7,364.03</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="6280.12" data-display="6,280.12" title="Low · 平均长度 · 原始值 6280.12">6,280.12</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.11" data-display="11.00%" title="High · 正常结束率 · 原始值 0.11">11.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.26" data-display="26.00%" title="Low · 正常结束率 · 原始值 0.26">26.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.89" data-display="89.00%" title="High · 截断率 · 原始值 0.89">89.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.74" data-display="74.00%" title="Low · 截断率 · 原始值 0.74">74.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.42" data-display="42.00%" title="High · 答案提取率 · 原始值 0.42">42.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.45" data-display="45.00%" title="Low · 答案提取率 · 原始值 0.45">45.00%</td>
+</tr>
+<tr data-epoch="8"><th scope="row" class="epoch-cell">08</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.54" data-display="54.00%" title="High · 正确率 · 原始值 0.54 · 54/100 题">54.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.56" data-display="56.00%" title="Low · 正确率 · 原始值 0.56 · 56/100 题">56.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="7892.03" data-display="7,892.03" title="High · 平均长度 · 原始值 7892.03">7,892.03</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7690.05" data-display="7,690.05" title="Low · 平均长度 · 原始值 7690.05">7,690.05</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.04" data-display="4.00%" title="High · 正常结束率 · 原始值 0.04">4.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.08" data-display="8.00%" title="Low · 正常结束率 · 原始值 0.08">8.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.96" data-display="96.00%" title="High · 截断率 · 原始值 0.96">96.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.92" data-display="92.00%" title="Low · 截断率 · 原始值 0.92">92.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.6" data-display="60.00%" title="High · 答案提取率 · 原始值 0.6">60.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.61" data-display="61.00%" title="Low · 答案提取率 · 原始值 0.61">61.00%</td>
+</tr>
+<tr data-epoch="10"><th scope="row" class="epoch-cell">10</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.59" data-display="59.00%" title="High · 正确率 · 原始值 0.59 · 59/100 题">59.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.58" data-display="58.00%" title="Low · 正确率 · 原始值 0.58 · 58/100 题">58.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="8192" data-display="8,192.00" title="High · 平均长度 · 原始值 8192">8,192.00</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7481.43" data-display="7,481.43" title="Low · 平均长度 · 原始值 7481.43">7,481.43</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.0" data-display="0.00%" title="High · 正常结束率 · 原始值 0.0">0.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.13" data-display="13.00%" title="Low · 正常结束率 · 原始值 0.13">13.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="1.0" data-display="100.00%" title="High · 截断率 · 原始值 1.0">100.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.87" data-display="87.00%" title="Low · 截断率 · 原始值 0.87">87.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.69" data-display="69.00%" title="High · 答案提取率 · 原始值 0.69">69.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.61" data-display="61.00%" title="Low · 答案提取率 · 原始值 0.61">61.00%</td>
+</tr>
+<tr data-epoch="12"><th scope="row" class="epoch-cell">12</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.5" data-display="50.00%" title="High · 正确率 · 原始值 0.5 · 50/100 题">50.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.53" data-display="53.00%" title="Low · 正确率 · 原始值 0.53 · 53/100 题">53.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="7889.59" data-display="7,889.59" title="High · 平均长度 · 原始值 7889.59">7,889.59</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7903.67" data-display="7,903.67" title="Low · 平均长度 · 原始值 7903.67">7,903.67</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.05" data-display="5.00%" title="High · 正常结束率 · 原始值 0.05">5.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.06" data-display="6.00%" title="Low · 正常结束率 · 原始值 0.06">6.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.95" data-display="95.00%" title="High · 截断率 · 原始值 0.95">95.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.94" data-display="94.00%" title="Low · 截断率 · 原始值 0.94">94.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.62" data-display="62.00%" title="High · 答案提取率 · 原始值 0.62">62.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.57" data-display="57.00%" title="Low · 答案提取率 · 原始值 0.57">57.00%</td>
+</tr>
+<tr data-epoch="14"><th scope="row" class="epoch-cell">14</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.55" data-display="55.00%" title="High · 正确率 · 原始值 0.55 · 55/100 题">55.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.62" data-display="62.00%" title="Low · 正确率 · 原始值 0.62 · 62/100 题">62.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="8127.69" data-display="8,127.69" title="High · 平均长度 · 原始值 8127.69">8,127.69</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7686.59" data-display="7,686.59" title="Low · 平均长度 · 原始值 7686.59">7,686.59</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.02" data-display="2.00%" title="High · 正常结束率 · 原始值 0.02">2.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.08" data-display="8.00%" title="Low · 正常结束率 · 原始值 0.08">8.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.98" data-display="98.00%" title="High · 截断率 · 原始值 0.98">98.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.92" data-display="92.00%" title="Low · 截断率 · 原始值 0.92">92.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.66" data-display="66.00%" title="High · 答案提取率 · 原始值 0.66">66.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.69" data-display="69.00%" title="Low · 答案提取率 · 原始值 0.69">69.00%</td>
+</tr>
+<tr data-epoch="16"><th scope="row" class="epoch-cell">16</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.53" data-display="53.00%" title="High · 正确率 · 原始值 0.53 · 53/100 题">53.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.54" data-display="54.00%" title="Low · 正确率 · 原始值 0.54 · 54/100 题">54.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="8066.03" data-display="8,066.03" title="High · 平均长度 · 原始值 8066.03">8,066.03</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7897.2" data-display="7,897.20" title="Low · 平均长度 · 原始值 7897.2">7,897.20</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.03" data-display="3.00%" title="High · 正常结束率 · 原始值 0.03">3.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.06" data-display="6.00%" title="Low · 正常结束率 · 原始值 0.06">6.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.97" data-display="97.00%" title="High · 截断率 · 原始值 0.97">97.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.94" data-display="94.00%" title="Low · 截断率 · 原始值 0.94">94.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.63" data-display="63.00%" title="High · 答案提取率 · 原始值 0.63">63.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.61" data-display="61.00%" title="Low · 答案提取率 · 原始值 0.61">61.00%</td>
+</tr>
+</tbody></table></div></section><section id="livecodebench" aria-labelledby="heading-livecodebench">
+<div class="section-head">
+<div><div class="section-number">TASK 04</div><h2 id="heading-livecodebench">LiveCodeBench</h2></div>
+<p class="denominator">每个 epoch：<span class="high-text">High 100 题</span><span class="divider"> / </span><span class="low-text">Low 100 题</span></p>
+</div>
+<div class="table-scroll" tabindex="0" role="region" aria-label="LiveCodeBench 的 High 与 Low 逐 epoch 对照表，可横向滚动">
+<table data-task="livecodebench"><caption>LiveCodeBench · 同一 epoch 的 High / Low 对照</caption><colgroup><col class="epoch-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"><col class="metric-col"></colgroup>
+<thead><tr><th rowspan="2" scope="col" class="epoch-cell">Epoch</th>
+<th colspan="2" scope="colgroup" class="metric-group">正确率</th>
+<th colspan="2" scope="colgroup" class="metric-group">平均长度<span class="unit">tokens</span></th>
+<th colspan="2" scope="colgroup" class="metric-group">正常结束率</th>
+<th colspan="2" scope="colgroup" class="metric-group">截断率</th>
+<th colspan="2" scope="colgroup" class="metric-group">答案提取率</th>
+</tr><tr>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+<th scope="col" class="high-text ">High</th>
+<th scope="col" class="low-text group-end">Low</th>
+</tr></thead><tbody>
+<tr data-epoch="1"><th scope="row" class="epoch-cell">01</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.18" data-display="18.00%" title="High · 正确率 · 原始值 0.18 · 18/100 题">18.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.25" data-display="25.00%" title="Low · 正确率 · 原始值 0.25 · 25/100 题">25.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="1087.53" data-display="1,087.53" title="High · 平均长度 · 原始值 1087.53">1,087.53</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="1013.83" data-display="1,013.83" title="Low · 平均长度 · 原始值 1013.83">1,013.83</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.93" data-display="93.00%" title="High · 正常结束率 · 原始值 0.93">93.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.95" data-display="95.00%" title="Low · 正常结束率 · 原始值 0.95">95.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.07" data-display="7.00%" title="High · 截断率 · 原始值 0.07">7.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.05" data-display="5.00%" title="Low · 截断率 · 原始值 0.05">5.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.87" data-display="87.00%" title="High · 答案提取率 · 原始值 0.87">87.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.93" data-display="93.00%" title="Low · 答案提取率 · 原始值 0.93">93.00%</td>
+</tr>
+<tr data-epoch="2"><th scope="row" class="epoch-cell">02</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.13" data-display="13.00%" title="High · 正确率 · 原始值 0.13 · 13/100 题">13.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.14" data-display="14.00%" title="Low · 正确率 · 原始值 0.14 · 14/100 题">14.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="5212.72" data-display="5,212.72" title="High · 平均长度 · 原始值 5212.72">5,212.72</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="5323.54" data-display="5,323.54" title="Low · 平均长度 · 原始值 5323.54">5,323.54</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.42" data-display="42.00%" title="High · 正常结束率 · 原始值 0.42">42.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.4" data-display="40.00%" title="Low · 正常结束率 · 原始值 0.4">40.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.58" data-display="58.00%" title="High · 截断率 · 原始值 0.58">58.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.6" data-display="60.00%" title="Low · 截断率 · 原始值 0.6">60.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.67" data-display="67.00%" title="High · 答案提取率 · 原始值 0.67">67.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.54" data-display="54.00%" title="Low · 答案提取率 · 原始值 0.54">54.00%</td>
+</tr>
+<tr data-epoch="4"><th scope="row" class="epoch-cell">04</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.08" data-display="8.00%" title="High · 正确率 · 原始值 0.08 · 8/100 题">8.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.07" data-display="7.00%" title="Low · 正确率 · 原始值 0.07 · 7/100 题">7.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="7313.46" data-display="7,313.46" title="High · 平均长度 · 原始值 7313.46">7,313.46</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7622.95" data-display="7,622.95" title="Low · 平均长度 · 原始值 7622.95">7,622.95</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.14" data-display="14.00%" title="High · 正常结束率 · 原始值 0.14">14.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.09" data-display="9.00%" title="Low · 正常结束率 · 原始值 0.09">9.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.86" data-display="86.00%" title="High · 截断率 · 原始值 0.86">86.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.91" data-display="91.00%" title="Low · 截断率 · 原始值 0.91">91.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.42" data-display="42.00%" title="High · 答案提取率 · 原始值 0.42">42.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.36" data-display="36.00%" title="Low · 答案提取率 · 原始值 0.36">36.00%</td>
+</tr>
+<tr data-epoch="8"><th scope="row" class="epoch-cell">08</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.17" data-display="17.00%" title="High · 正确率 · 原始值 0.17 · 17/100 题">17.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.08" data-display="8.00%" title="Low · 正确率 · 原始值 0.08 · 8/100 题">8.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="7093.61" data-display="7,093.61" title="High · 平均长度 · 原始值 7093.61">7,093.61</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7654.81" data-display="7,654.81" title="Low · 平均长度 · 原始值 7654.81">7,654.81</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.17" data-display="17.00%" title="High · 正常结束率 · 原始值 0.17">17.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.1" data-display="10.00%" title="Low · 正常结束率 · 原始值 0.1">10.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.83" data-display="83.00%" title="High · 截断率 · 原始值 0.83">83.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.9" data-display="90.00%" title="Low · 截断率 · 原始值 0.9">90.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.39" data-display="39.00%" title="High · 答案提取率 · 原始值 0.39">39.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.32" data-display="32.00%" title="Low · 答案提取率 · 原始值 0.32">32.00%</td>
+</tr>
+<tr data-epoch="10"><th scope="row" class="epoch-cell">10</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.14" data-display="14.00%" title="High · 正确率 · 原始值 0.14 · 14/100 题">14.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.11" data-display="11.00%" title="Low · 正确率 · 原始值 0.11 · 11/100 题">11.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="6848.99" data-display="6,848.99" title="High · 平均长度 · 原始值 6848.99">6,848.99</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7655.8" data-display="7,655.80" title="Low · 平均长度 · 原始值 7655.8">7,655.80</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.21" data-display="21.00%" title="High · 正常结束率 · 原始值 0.21">21.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.11" data-display="11.00%" title="Low · 正常结束率 · 原始值 0.11">11.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.79" data-display="79.00%" title="High · 截断率 · 原始值 0.79">79.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.89" data-display="89.00%" title="Low · 截断率 · 原始值 0.89">89.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.57" data-display="57.00%" title="High · 答案提取率 · 原始值 0.57">57.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.35" data-display="35.00%" title="Low · 答案提取率 · 原始值 0.35">35.00%</td>
+</tr>
+<tr data-epoch="12"><th scope="row" class="epoch-cell">12</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.14" data-display="14.00%" title="High · 正确率 · 原始值 0.14 · 14/100 题">14.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.12" data-display="12.00%" title="Low · 正确率 · 原始值 0.12 · 12/100 题">12.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="6847.6" data-display="6,847.60" title="High · 平均长度 · 原始值 6847.6">6,847.60</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7842.99" data-display="7,842.99" title="Low · 平均长度 · 原始值 7842.99">7,842.99</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.21" data-display="21.00%" title="High · 正常结束率 · 原始值 0.21">21.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.1" data-display="10.00%" title="Low · 正常结束率 · 原始值 0.1">10.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.79" data-display="79.00%" title="High · 截断率 · 原始值 0.79">79.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.9" data-display="90.00%" title="Low · 截断率 · 原始值 0.9">90.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.59" data-display="59.00%" title="High · 答案提取率 · 原始值 0.59">59.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.34" data-display="34.00%" title="Low · 答案提取率 · 原始值 0.34">34.00%</td>
+</tr>
+<tr data-epoch="14"><th scope="row" class="epoch-cell">14</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.18" data-display="18.00%" title="High · 正确率 · 原始值 0.18 · 18/100 题">18.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.11" data-display="11.00%" title="Low · 正确率 · 原始值 0.11 · 11/100 题">11.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="6749.58" data-display="6,749.58" title="High · 平均长度 · 原始值 6749.58">6,749.58</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7832.81" data-display="7,832.81" title="Low · 平均长度 · 原始值 7832.81">7,832.81</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.24" data-display="24.00%" title="High · 正常结束率 · 原始值 0.24">24.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.1" data-display="10.00%" title="Low · 正常结束率 · 原始值 0.1">10.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.76" data-display="76.00%" title="High · 截断率 · 原始值 0.76">76.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.9" data-display="90.00%" title="Low · 截断率 · 原始值 0.9">90.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.63" data-display="63.00%" title="High · 答案提取率 · 原始值 0.63">63.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.38" data-display="38.00%" title="Low · 答案提取率 · 原始值 0.38">38.00%</td>
+</tr>
+<tr data-epoch="16"><th scope="row" class="epoch-cell">16</th>
+<td class="high  accuracy" data-group="high" data-metric="accuracy" data-value="0.16" data-display="16.00%" title="High · 正确率 · 原始值 0.16 · 16/100 题">16.00%</td>
+<td class="low group-end accuracy" data-group="low" data-metric="accuracy" data-value="0.13" data-display="13.00%" title="Low · 正确率 · 原始值 0.13 · 13/100 题">13.00%</td>
+<td class="high  " data-group="high" data-metric="mean_tokens" data-value="7444.66" data-display="7,444.66" title="High · 平均长度 · 原始值 7444.66">7,444.66</td>
+<td class="low group-end " data-group="low" data-metric="mean_tokens" data-value="7905.62" data-display="7,905.62" title="Low · 平均长度 · 原始值 7905.62">7,905.62</td>
+<td class="high  " data-group="high" data-metric="normal_end_rate" data-value="0.14" data-display="14.00%" title="High · 正常结束率 · 原始值 0.14">14.00%</td>
+<td class="low group-end " data-group="low" data-metric="normal_end_rate" data-value="0.07" data-display="7.00%" title="Low · 正常结束率 · 原始值 0.07">7.00%</td>
+<td class="high  " data-group="high" data-metric="truncation_rate" data-value="0.86" data-display="86.00%" title="High · 截断率 · 原始值 0.86">86.00%</td>
+<td class="low group-end " data-group="low" data-metric="truncation_rate" data-value="0.93" data-display="93.00%" title="Low · 截断率 · 原始值 0.93">93.00%</td>
+<td class="high  " data-group="high" data-metric="extraction_rate" data-value="0.52" data-display="52.00%" title="High · 答案提取率 · 原始值 0.52">52.00%</td>
+<td class="low group-end " data-group="low" data-metric="extraction_rate" data-value="0.44" data-display="44.00%" title="Low · 答案提取率 · 原始值 0.44">44.00%</td>
+</tr>
+</tbody></table></div></section><footer><p>按训练 epoch 升序展示：1、2、4、8、10、12、14、16。未观测节点不插值、不补零；“首次答对”仅指已观测节点。</p><p>正确率、正常结束率、截断率和答案提取率沿用原报告口径。本文件重新排列已有汇总数据，不包含逐题原始回答。</p><details><summary>来源、精度与原报告详情路径</summary><div class="source-meta"><p>来源：<strong>report_hl_zong.html</strong>。整理日期：2026-11-19。</p><p>64 条原始记录重排为 4 张表 × 8 行；全部 320 个指标原始值保留在本文件中。题数逐组核对，High / Low 没有缺失组合。显示精度调整不改变原始数值；CSV 导出保留原始小数。</p><p>原报告 SHA-256：<code>23d7400fd668fc15f014000e0c9a0f707355d27b2866a6875ab62aa65624265b</code></p><p>以下为原报告中的相对路径，需在服务器原实验目录结构中查看。仅下载本 HTML 时不附带这些逐题报告或原 curves.csv，因此这里保留路径供查找。</p></div><div class="paths"><h4>High / math-gpqa</h4><ul><li>完整报告：<code>../../high/postprocess/four-benchmarks-vllm-v1-math-gpqa/report/report.html</code></li><li>第 1 组报告：<code>../../high/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-001/report/report.html</code></li><li>第 2 组报告：<code>../../high/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-002/report/report.html</code></li><li>第 3 组报告：<code>../../high/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-003/report/report.html</code></li><li>第 4 组报告：<code>../../high/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-004/report/report.html</code></li></ul><h4>High / bbh-livecodebench</h4><ul><li>完整报告：<code>../../high/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/report/report.html</code></li><li>第 1 组报告：<code>../../high/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-001/report/report.html</code></li><li>第 2 组报告：<code>../../high/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-002/report/report.html</code></li><li>第 3 组报告：<code>../../high/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-003/report/report.html</code></li><li>第 4 组报告：<code>../../high/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-004/report/report.html</code></li></ul><h4>Low / math-gpqa</h4><ul><li>完整报告：<code>../../low/postprocess/four-benchmarks-vllm-v1-math-gpqa/report/report.html</code></li><li>第 1 组报告：<code>../../low/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-001/report/report.html</code></li><li>第 2 组报告：<code>../../low/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-002/report/report.html</code></li><li>第 3 组报告：<code>../../low/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-003/report/report.html</code></li><li>第 4 组报告：<code>../../low/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-004/report/report.html</code></li></ul><h4>Low / bbh-livecodebench</h4><ul><li>完整报告：<code>../../low/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/report/report.html</code></li><li>第 1 组报告：<code>../../low/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-001/report/report.html</code></li><li>第 2 组报告：<code>../../low/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-002/report/report.html</code></li><li>第 3 组报告：<code>../../low/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-003/report/report.html</code></li><li>第 4 组报告：<code>../../low/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-004/report/report.html</code></li></ul><p>原汇总 CSV 相对路径：<code>curves.csv</code>。上方“下载对照 CSV”可直接从本文件导出重排后的数据。</p></div></details></footer></main><script id="source-data" type="application/json">{"source_file": "report_hl_zong.html", "source_sha256": "23d7400fd668fc15f014000e0c9a0f707355d27b2866a6875ab62aa65624265b", "prepared_date": "2026-11-19", "source_rows": [{"group": "high", "epoch": "1", "task": "math500", "n": "128", "accuracy": "0.625", "mean_tokens": "968.7109375", "normal_end_rate": "0.953125", "truncation_rate": "0.046875", "extraction_rate": "0.9296875"}, {"group": "high", "epoch": "1", "task": "gpqa", "n": "64", "accuracy": "0.171875", "mean_tokens": "1113.953125", "normal_end_rate": "0.921875", "truncation_rate": "0.078125", "extraction_rate": "0.6875"}, {"group": "high", "epoch": "2", "task": "math500", "n": "128", "accuracy": "0.4921875", "mean_tokens": "7262.5859375", "normal_end_rate": "0.1328125", "truncation_rate": "0.8671875", "extraction_rate": "0.71875"}, {"group": "high", "epoch": "2", "task": "gpqa", "n": "64", "accuracy": "0.140625", "mean_tokens": "6892.734375", "normal_end_rate": "0.1875", "truncation_rate": "0.8125", "extraction_rate": "0.40625"}, {"group": "high", "epoch": "4", "task": "math500", "n": "128", "accuracy": "0.6171875", "mean_tokens": "7971.1328125", "normal_end_rate": "0.0390625", "truncation_rate": "0.9609375", "extraction_rate": "0.7734375"}, {"group": "high", "epoch": "4", "task": "gpqa", "n": "64", "accuracy": "0.296875", "mean_tokens": "8034.765625", "normal_end_rate": "0.03125", "truncation_rate": "0.96875", "extraction_rate": "0.40625"}, {"group": "high", "epoch": "8", "task": "math500", "n": "128", "accuracy": "0.65625", "mean_tokens": "8191.7890625", "normal_end_rate": "0.0078125", "truncation_rate": "0.9921875", "extraction_rate": "0.765625"}, {"group": "high", "epoch": "8", "task": "gpqa", "n": "64", "accuracy": "0.140625", "mean_tokens": "8192", "normal_end_rate": "0.0", "truncation_rate": "1.0", "extraction_rate": "0.328125"}, {"group": "high", "epoch": "10", "task": "math500", "n": "128", "accuracy": "0.671875", "mean_tokens": "8192", "normal_end_rate": "0.0", "truncation_rate": "1.0", "extraction_rate": "0.8359375"}, {"group": "high", "epoch": "10", "task": "gpqa", "n": "64", "accuracy": "0.1875", "mean_tokens": "8192", "normal_end_rate": "0.0", "truncation_rate": "1.0", "extraction_rate": "0.421875"}, {"group": "high", "epoch": "12", "task": "math500", "n": "128", "accuracy": "0.7109375", "mean_tokens": "8192", "normal_end_rate": "0.0", "truncation_rate": "1.0", "extraction_rate": "0.796875"}, {"group": "high", "epoch": "12", "task": "gpqa", "n": "64", "accuracy": "0.234375", "mean_tokens": "8192", "normal_end_rate": "0.0", "truncation_rate": "1.0", "extraction_rate": "0.5625"}, {"group": "high", "epoch": "14", "task": "math500", "n": "128", "accuracy": "0.7421875", "mean_tokens": "8192", "normal_end_rate": "0.0", "truncation_rate": "1.0", "extraction_rate": "0.84375"}, {"group": "high", "epoch": "14", "task": "gpqa", "n": "64", "accuracy": "0.25", "mean_tokens": "8192", "normal_end_rate": "0.0", "truncation_rate": "1.0", "extraction_rate": "0.546875"}, {"group": "high", "epoch": "16", "task": "math500", "n": "128", "accuracy": "0.75", "mean_tokens": "8192", "normal_end_rate": "0.0", "truncation_rate": "1.0", "extraction_rate": "0.8515625"}, {"group": "high", "epoch": "16", "task": "gpqa", "n": "64", "accuracy": "0.25", "mean_tokens": "8192", "normal_end_rate": "0.0", "truncation_rate": "1.0", "extraction_rate": "0.515625"}, {"group": "high", "epoch": "1", "task": "bbh", "n": "100", "accuracy": "0.19", "mean_tokens": "2017.92", "normal_end_rate": "0.77", "truncation_rate": "0.23", "extraction_rate": "0.39"}, {"group": "high", "epoch": "1", "task": "livecodebench", "n": "100", "accuracy": "0.18", "mean_tokens": "1087.53", "normal_end_rate": "0.93", "truncation_rate": "0.07", "extraction_rate": "0.87"}, {"group": "high", "epoch": "2", "task": "bbh", "n": "100", "accuracy": "0.26", "mean_tokens": "6789.39", "normal_end_rate": "0.18", "truncation_rate": "0.82", "extraction_rate": "0.34"}, {"group": "high", "epoch": "2", "task": "livecodebench", "n": "100", "accuracy": "0.13", "mean_tokens": "5212.72", "normal_end_rate": "0.42", "truncation_rate": "0.58", "extraction_rate": "0.67"}, {"group": "high", "epoch": "4", "task": "bbh", "n": "100", "accuracy": "0.37", "mean_tokens": "7364.03", "normal_end_rate": "0.11", "truncation_rate": "0.89", "extraction_rate": "0.42"}, {"group": "high", "epoch": "4", "task": "livecodebench", "n": "100", "accuracy": "0.08", "mean_tokens": "7313.46", "normal_end_rate": "0.14", "truncation_rate": "0.86", "extraction_rate": "0.42"}, {"group": "high", "epoch": "8", "task": "bbh", "n": "100", "accuracy": "0.54", "mean_tokens": "7892.03", "normal_end_rate": "0.04", "truncation_rate": "0.96", "extraction_rate": "0.6"}, {"group": "high", "epoch": "8", "task": "livecodebench", "n": "100", "accuracy": "0.17", "mean_tokens": "7093.61", "normal_end_rate": "0.17", "truncation_rate": "0.83", "extraction_rate": "0.39"}, {"group": "high", "epoch": "10", "task": "bbh", "n": "100", "accuracy": "0.59", "mean_tokens": "8192", "normal_end_rate": "0.0", "truncation_rate": "1.0", "extraction_rate": "0.69"}, {"group": "high", "epoch": "10", "task": "livecodebench", "n": "100", "accuracy": "0.14", "mean_tokens": "6848.99", "normal_end_rate": "0.21", "truncation_rate": "0.79", "extraction_rate": "0.57"}, {"group": "high", "epoch": "12", "task": "bbh", "n": "100", "accuracy": "0.5", "mean_tokens": "7889.59", "normal_end_rate": "0.05", "truncation_rate": "0.95", "extraction_rate": "0.62"}, {"group": "high", "epoch": "12", "task": "livecodebench", "n": "100", "accuracy": "0.14", "mean_tokens": "6847.6", "normal_end_rate": "0.21", "truncation_rate": "0.79", "extraction_rate": "0.59"}, {"group": "high", "epoch": "14", "task": "bbh", "n": "100", "accuracy": "0.55", "mean_tokens": "8127.69", "normal_end_rate": "0.02", "truncation_rate": "0.98", "extraction_rate": "0.66"}, {"group": "high", "epoch": "14", "task": "livecodebench", "n": "100", "accuracy": "0.18", "mean_tokens": "6749.58", "normal_end_rate": "0.24", "truncation_rate": "0.76", "extraction_rate": "0.63"}, {"group": "high", "epoch": "16", "task": "bbh", "n": "100", "accuracy": "0.53", "mean_tokens": "8066.03", "normal_end_rate": "0.03", "truncation_rate": "0.97", "extraction_rate": "0.63"}, {"group": "high", "epoch": "16", "task": "livecodebench", "n": "100", "accuracy": "0.16", "mean_tokens": "7444.66", "normal_end_rate": "0.14", "truncation_rate": "0.86", "extraction_rate": "0.52"}, {"group": "low", "epoch": "1", "task": "math500", "n": "128", "accuracy": "0.6484375", "mean_tokens": "719.2421875", "normal_end_rate": "0.9765625", "truncation_rate": "0.0234375", "extraction_rate": "0.9609375"}, {"group": "low", "epoch": "1", "task": "gpqa", "n": "64", "accuracy": "0.15625", "mean_tokens": "992.9375", "normal_end_rate": "0.9375", "truncation_rate": "0.0625", "extraction_rate": "0.65625"}, {"group": "low", "epoch": "2", "task": "math500", "n": "128", "accuracy": "0.640625", "mean_tokens": "5492.90625", "normal_end_rate": "0.4140625", "truncation_rate": "0.5859375", "extraction_rate": "0.8203125"}, {"group": "low", "epoch": "2", "task": "gpqa", "n": "64", "accuracy": "0.15625", "mean_tokens": "6332.53125", "normal_end_rate": "0.265625", "truncation_rate": "0.734375", "extraction_rate": "0.375"}, {"group": "low", "epoch": "4", "task": "math500", "n": "128", "accuracy": "0.6328125", "mean_tokens": "6927.4765625", "normal_end_rate": "0.203125", "truncation_rate": "0.796875", "extraction_rate": "0.7578125"}, {"group": "low", "epoch": "4", "task": "gpqa", "n": "64", "accuracy": "0.1875", "mean_tokens": "7120.453125", "normal_end_rate": "0.15625", "truncation_rate": "0.84375", "extraction_rate": "0.484375"}, {"group": "low", "epoch": "8", "task": "math500", "n": "128", "accuracy": "0.703125", "mean_tokens": "7540.0625", "normal_end_rate": "0.1328125", "truncation_rate": "0.8671875", "extraction_rate": "0.828125"}, {"group": "low", "epoch": "8", "task": "gpqa", "n": "64", "accuracy": "0.265625", "mean_tokens": "8115.390625", "normal_end_rate": "0.015625", "truncation_rate": "0.984375", "extraction_rate": "0.484375"}, {"group": "low", "epoch": "10", "task": "math500", "n": "128", "accuracy": "0.7578125", "mean_tokens": "7788.6015625", "normal_end_rate": "0.1015625", "truncation_rate": "0.8984375", "extraction_rate": "0.8828125"}, {"group": "low", "epoch": "10", "task": "gpqa", "n": "64", "accuracy": "0.328125", "mean_tokens": "8022.546875", "normal_end_rate": "0.046875", "truncation_rate": "0.953125", "extraction_rate": "0.609375"}, {"group": "low", "epoch": "12", "task": "math500", "n": "128", "accuracy": "0.71875", "mean_tokens": "7821.8359375", "normal_end_rate": "0.0859375", "truncation_rate": "0.9140625", "extraction_rate": "0.828125"}, {"group": "low", "epoch": "12", "task": "gpqa", "n": "64", "accuracy": "0.21875", "mean_tokens": "8192", "normal_end_rate": "0.0", "truncation_rate": "1.0", "extraction_rate": "0.4375"}, {"group": "low", "epoch": "14", "task": "math500", "n": "128", "accuracy": "0.7265625", "mean_tokens": "8177.2265625", "normal_end_rate": "0.0078125", "truncation_rate": "0.9921875", "extraction_rate": "0.859375"}, {"group": "low", "epoch": "14", "task": "gpqa", "n": "64", "accuracy": "0.265625", "mean_tokens": "8192", "normal_end_rate": "0.0", "truncation_rate": "1.0", "extraction_rate": "0.640625"}, {"group": "low", "epoch": "16", "task": "math500", "n": "128", "accuracy": "0.796875", "mean_tokens": "8179.015625", "normal_end_rate": "0.0078125", "truncation_rate": "0.9921875", "extraction_rate": "0.8671875"}, {"group": "low", "epoch": "16", "task": "gpqa", "n": "64", "accuracy": "0.34375", "mean_tokens": "8180.296875", "normal_end_rate": "0.015625", "truncation_rate": "0.984375", "extraction_rate": "0.640625"}, {"group": "low", "epoch": "1", "task": "bbh", "n": "100", "accuracy": "0.22", "mean_tokens": "1943.82", "normal_end_rate": "0.78", "truncation_rate": "0.22", "extraction_rate": "0.42"}, {"group": "low", "epoch": "1", "task": "livecodebench", "n": "100", "accuracy": "0.25", "mean_tokens": "1013.83", "normal_end_rate": "0.95", "truncation_rate": "0.05", "extraction_rate": "0.93"}, {"group": "low", "epoch": "2", "task": "bbh", "n": "100", "accuracy": "0.32", "mean_tokens": "4939", "normal_end_rate": "0.44", "truncation_rate": "0.56", "extraction_rate": "0.41"}, {"group": "low", "epoch": "2", "task": "livecodebench", "n": "100", "accuracy": "0.14", "mean_tokens": "5323.54", "normal_end_rate": "0.4", "truncation_rate": "0.6", "extraction_rate": "0.54"}, {"group": "low", "epoch": "4", "task": "bbh", "n": "100", "accuracy": "0.35", "mean_tokens": "6280.12", "normal_end_rate": "0.26", "truncation_rate": "0.74", "extraction_rate": "0.45"}, {"group": "low", "epoch": "4", "task": "livecodebench", "n": "100", "accuracy": "0.07", "mean_tokens": "7622.95", "normal_end_rate": "0.09", "truncation_rate": "0.91", "extraction_rate": "0.36"}, {"group": "low", "epoch": "8", "task": "bbh", "n": "100", "accuracy": "0.56", "mean_tokens": "7690.05", "normal_end_rate": "0.08", "truncation_rate": "0.92", "extraction_rate": "0.61"}, {"group": "low", "epoch": "8", "task": "livecodebench", "n": "100", "accuracy": "0.08", "mean_tokens": "7654.81", "normal_end_rate": "0.1", "truncation_rate": "0.9", "extraction_rate": "0.32"}, {"group": "low", "epoch": "10", "task": "bbh", "n": "100", "accuracy": "0.58", "mean_tokens": "7481.43", "normal_end_rate": "0.13", "truncation_rate": "0.87", "extraction_rate": "0.61"}, {"group": "low", "epoch": "10", "task": "livecodebench", "n": "100", "accuracy": "0.11", "mean_tokens": "7655.8", "normal_end_rate": "0.11", "truncation_rate": "0.89", "extraction_rate": "0.35"}, {"group": "low", "epoch": "12", "task": "bbh", "n": "100", "accuracy": "0.53", "mean_tokens": "7903.67", "normal_end_rate": "0.06", "truncation_rate": "0.94", "extraction_rate": "0.57"}, {"group": "low", "epoch": "12", "task": "livecodebench", "n": "100", "accuracy": "0.12", "mean_tokens": "7842.99", "normal_end_rate": "0.1", "truncation_rate": "0.9", "extraction_rate": "0.34"}, {"group": "low", "epoch": "14", "task": "bbh", "n": "100", "accuracy": "0.62", "mean_tokens": "7686.59", "normal_end_rate": "0.08", "truncation_rate": "0.92", "extraction_rate": "0.69"}, {"group": "low", "epoch": "14", "task": "livecodebench", "n": "100", "accuracy": "0.11", "mean_tokens": "7832.81", "normal_end_rate": "0.1", "truncation_rate": "0.9", "extraction_rate": "0.38"}, {"group": "low", "epoch": "16", "task": "bbh", "n": "100", "accuracy": "0.54", "mean_tokens": "7897.2", "normal_end_rate": "0.06", "truncation_rate": "0.94", "extraction_rate": "0.61"}, {"group": "low", "epoch": "16", "task": "livecodebench", "n": "100", "accuracy": "0.13", "mean_tokens": "7905.62", "normal_end_rate": "0.07", "truncation_rate": "0.93", "extraction_rate": "0.44"}], "source_links": [{"label": "完整报告", "relative_path": "../../high/postprocess/four-benchmarks-vllm-v1-math-gpqa/report/report.html"}, {"label": "第 1 组报告", "relative_path": "../../high/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-001/report/report.html"}, {"label": "第 2 组报告", "relative_path": "../../high/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-002/report/report.html"}, {"label": "第 3 组报告", "relative_path": "../../high/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-003/report/report.html"}, {"label": "第 4 组报告", "relative_path": "../../high/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-004/report/report.html"}, {"label": "完整报告", "relative_path": "../../high/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/report/report.html"}, {"label": "第 1 组报告", "relative_path": "../../high/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-001/report/report.html"}, {"label": "第 2 组报告", "relative_path": "../../high/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-002/report/report.html"}, {"label": "第 3 组报告", "relative_path": "../../high/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-003/report/report.html"}, {"label": "第 4 组报告", "relative_path": "../../high/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-004/report/report.html"}, {"label": "完整报告", "relative_path": "../../low/postprocess/four-benchmarks-vllm-v1-math-gpqa/report/report.html"}, {"label": "第 1 组报告", "relative_path": "../../low/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-001/report/report.html"}, {"label": "第 2 组报告", "relative_path": "../../low/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-002/report/report.html"}, {"label": "第 3 组报告", "relative_path": "../../low/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-003/report/report.html"}, {"label": "第 4 组报告", "relative_path": "../../low/postprocess/four-benchmarks-vllm-v1-math-gpqa/groups/group-004/report/report.html"}, {"label": "完整报告", "relative_path": "../../low/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/report/report.html"}, {"label": "第 1 组报告", "relative_path": "../../low/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-001/report/report.html"}, {"label": "第 2 组报告", "relative_path": "../../low/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-002/report/report.html"}, {"label": "第 3 组报告", "relative_path": "../../low/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-003/report/report.html"}, {"label": "第 4 组报告", "relative_path": "../../low/postprocess/four-benchmarks-vllm-v1-bbh-livecodebench/groups/group-004/report/report.html"}, {"label": "已完成面板的 high/low 汇总 CSV", "relative_path": "curves.csv"}], "epochs": [1, 2, 4, 8, 10, 12, 14, 16], "transformation": "Pivot source rows by task and epoch, keeping high/low adjacent for each metric. Rates display as percentages with 2 decimal places; mean length displays with 2 decimals. Exact original values remain in data-value and source_rows. No model inference or regrading.", "source_configuration": {"checkpoint_order": [16, 14, 12, 10, 8, 4, 2, 1], "samples_per_question": 1, "concurrency": 8, "max_new_tokens": 8192}, "validation": {"source_rows": 64, "tables": 4, "epochs_per_table": 8, "metric_cells_preserved": 320, "duplicate_keys": 0, "missing_comparisons": 0}}</script><script>
+const data=JSON.parse(document.getElementById('source-data').textContent);
+const raw=document.getElementById('raw-values');
+raw.addEventListener('change',()=>{
+ document.body.classList.toggle('raw',raw.checked);
+ document.querySelectorAll('td[data-value]').forEach(cell=>{cell.textContent=raw.checked?cell.dataset.value:cell.dataset.display;});
+ document.getElementById('format-description').textContent=raw.checked?'当前显示原报告完整小数；比例 0–1，平均长度单位为 token。':'比例显示为百分比（两位小数），平均长度保留两位小数；鼠标悬停可查看原始值。';
+});
+document.getElementById('download-csv').addEventListener('click',()=>{
+ const metrics=[['n','题数'],['accuracy','正确率'],['mean_tokens','平均长度'],['normal_end_rate','正常结束率'],['truncation_rate','截断率'],['extraction_rate','提取率']];
+ const header=['任务','epoch',...metrics.flatMap(([k,label])=>['high_'+label,'low_'+label])];
+ const lines=[header.join(',')];
+ for(const task of ['math500','gpqa','bbh','livecodebench']) for(const epoch of data.epochs){
+  const group={};for(const r of data.source_rows)if(r.task===task && Number(r.epoch)===epoch)group[r.group]=r;
+  lines.push([task,epoch,...metrics.flatMap(([k])=>[group.high[k],group.low[k]])].join(','));
+ }
+ const blob=new Blob(['\ufeff'+lines.join('\r\n')+'\r\n'],{type:'text/csv;charset=utf-8'});
+ const url=URL.createObjectURL(blob), a=document.createElement('a');a.href=url;a.download='high_low_by_task.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+</script></body></html>

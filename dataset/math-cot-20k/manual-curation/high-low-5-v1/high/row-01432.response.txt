@@ -1,458 +1,48 @@
 <think>
-Okay, so I need to find the minimum value of the expression $\frac{\sin^3 \alpha}{\cos \alpha} + \frac{\cos^3 \alpha}{\sin \alpha}$ where $\alpha$ is between 0 and $\frac{\pi}{2}$. Hmm, let me think about how to approach this. 
+Combine the two terms using the common denominator sin α cos α:
 
-First, maybe I can simplify the expression. Let me write it down again:
-
-$$
-\frac{\sin^3 \alpha}{\cos \alpha} + \frac{\cos^3 \alpha}{\sin \alpha}
-$$
-
-Hmm, both terms have $\sin$ and $\cos$ in the denominators. Maybe I can combine them or find a common denominator? Let me try that. The common denominator would be $\sin \alpha \cos \alpha$, right? Let me rewrite each term with that denominator.
-
-First term: $\frac{\sin^3 \alpha}{\cos \alpha} = \frac{\sin^4 \alpha}{\sin \alpha \cos \alpha}$
-
-Second term: $\frac{\cos^3 \alpha}{\sin \alpha} = \frac{\cos^4 \alpha}{\sin \alpha \cos \alpha}$
-
-So adding them together:
-
-$$
-\frac{\sin^4 \alpha + \cos^4 \alpha}{\sin \alpha \cos \alpha}
-$$
-
-Okay, so the expression simplifies to $\frac{\sin^4 \alpha + \cos^4 \alpha}{\sin \alpha \cos \alpha}$. Now, maybe I can simplify the numerator further. I remember that $\sin^4 \alpha + \cos^4 \alpha$ can be written in terms of $\sin^2 \alpha$ and $\cos^2 \alpha$. Let me recall the identity:
-
-$$
-\sin^4 \alpha + \cos^4 \alpha = (\sin^2 \alpha + \cos^2 \alpha)^2 - 2\sin^2 \alpha \cos^2 \alpha
-$$
-
-Since $\sin^2 \alpha + \cos^2 \alpha = 1$, this simplifies to:
-
-$$
-1 - 2\sin^2 \alpha \cos^2 \alpha
-$$
-
-So substituting back into the expression:
-
-$$
-\frac{1 - 2\sin^2 \alpha \cos^2 \alpha}{\sin \alpha \cos \alpha}
-$$
-
-Hmm, maybe I can split this fraction into two terms:
-
-$$
-\frac{1}{\sin \alpha \cos \alpha} - \frac{2\sin^2 \alpha \cos^2 \alpha}{\sin \alpha \cos \alpha}
-$$
-
-Simplifying each term:
-
-First term: $\frac{1}{\sin \alpha \cos \alpha}$
-
-Second term: $2 \sin \alpha \cos \alpha$
-
-So the entire expression becomes:
-
-$$
-\frac{1}{\sin \alpha \cos \alpha} - 2 \sin \alpha \cos \alpha
-$$
-
-Hmm, that looks a bit simpler. Now, I need to find the minimum of this expression. Let me think about substitutions here. Maybe let $x = \sin \alpha \cos \alpha$. Then, the expression becomes $\frac{1}{x} - 2x$. But I need to figure out the range of possible values for $x$.
-
-Since $\alpha \in (0, \frac{\pi}{2})$, both $\sin \alpha$ and $\cos \alpha$ are positive. Also, we know that $\sin \alpha \cos \alpha = \frac{1}{2} \sin 2\alpha$. The maximum value of $\sin 2\alpha$ is 1 when $\alpha = \frac{\pi}{4}$, so the maximum value of $x$ is $\frac{1}{2}$. The minimum value of $x$ approaches 0 as $\alpha$ approaches 0 or $\frac{\pi}{2}$. Therefore, $x \in (0, \frac{1}{2}]$.
-
-So our problem reduces to finding the minimum of $f(x) = \frac{1}{x} - 2x$ for $x \in (0, \frac{1}{2}]$.
-
-Wait, but since we are looking for the minimum of the original expression, which is $f(x)$, let's analyze this function. Let me take the derivative of $f(x)$ with respect to x:
-
-$f'(x) = -\frac{1}{x^2} - 2$
-
-Since $x > 0$, $f'(x)$ is always negative because $-\frac{1}{x^2}$ is negative and -2 is negative. Therefore, the function $f(x)$ is strictly decreasing on the interval $(0, \frac{1}{2}]$. Therefore, its minimum occurs at the right endpoint of the interval, which is $x = \frac{1}{2}$.
-
-Therefore, substituting $x = \frac{1}{2}$ into $f(x)$:
-
-$$
-f\left(\frac{1}{2}\right) = \frac{1}{\frac{1}{2}} - 2 \times \frac{1}{2} = 2 - 1 = 1
-$$
-
-Wait, so does that mean the minimum value is 1? But let me check if I did everything correctly. Because if the function is decreasing on the interval, then the minimum is achieved at the maximum value of x, which is 1/2, and gives 1. However, let me verify this with another approach, because sometimes when you make substitutions, you might lose some information or constraints.
-
-Alternatively, maybe I can use calculus on the original expression with respect to $\alpha$. Let me try that.
-
-Let me denote the original expression as:
-
-$$
-f(\alpha) = \frac{\sin^3 \alpha}{\cos \alpha} + \frac{\cos^3 \alpha}{\sin \alpha}
-$$
-
-Let me compute its derivative. First, simplify the expression again:
-
-$$
-f(\alpha) = \frac{\sin^3 \alpha}{\cos \alpha} + \frac{\cos^3 \alpha}{\sin \alpha} = \sin^2 \alpha \tan \alpha + \cos^2 \alpha \cot \alpha
-$$
-
-But maybe it's easier to differentiate as it is. Let me compute the derivative term by term.
-
-First term: $\frac{\sin^3 \alpha}{\cos \alpha}$. Let me write it as $\sin^3 \alpha \cdot \sec \alpha$. Using the product rule:
-
-Derivative is $3\sin^2 \alpha \cos \alpha \cdot \sec \alpha + \sin^3 \alpha \cdot \sec \alpha \tan \alpha$
-
-Wait, maybe better to use quotient rule. Let me do that.
-
-First term: $\frac{\sin^3 \alpha}{\cos \alpha}$. Let me denote numerator u = $\sin^3 \alpha$, denominator v = $\cos \alpha$. Then derivative is $\frac{u'v - uv'}{v^2}$.
-
-Compute u' = 3\sin^2 \alpha \cos \alpha.
-
-v' = -\sin \alpha.
-
-Therefore, derivative of first term is:
-
-$$
-\frac{3\sin^2 \alpha \cos \alpha \cdot \cos \alpha - \sin^3 \alpha \cdot (-\sin \alpha)}{\cos^2 \alpha} = \frac{3\sin^2 \alpha \cos^2 \alpha + \sin^4 \alpha}{\cos^2 \alpha}
-$$
-
-Similarly, derivative of the second term $\frac{\cos^3 \alpha}{\sin \alpha}$:
-
-Let me denote numerator u = $\cos^3 \alpha$, denominator v = $\sin \alpha$. Then derivative is $\frac{u'v - uv'}{v^2}$.
-
-Compute u' = -3\cos^2 \alpha \sin \alpha.
-
-v' = \cos \alpha.
-
-Thus, derivative is:
-
-$$
-\frac{-3\cos^2 \alpha \sin \alpha \cdot \sin \alpha - \cos^3 \alpha \cdot \cos \alpha}{\sin^2 \alpha} = \frac{-3\cos^2 \alpha \sin^2 \alpha - \cos^4 \alpha}{\sin^2 \alpha}
-$$
-
-Therefore, the total derivative of f(α) is:
-
-First term derivative + second term derivative:
-
-$$
-\frac{3\sin^2 \alpha \cos^2 \alpha + \sin^4 \alpha}{\cos^2 \alpha} + \frac{-3\cos^2 \alpha \sin^2 \alpha - \cos^4 \alpha}{\sin^2 \alpha}
-$$
-
-Let me simplify each part. Let me compute the first fraction:
-
-$$
-\frac{3\sin^2 \alpha \cos^2 \alpha + \sin^4 \alpha}{\cos^2 \alpha} = 3\sin^2 \alpha + \frac{\sin^4 \alpha}{\cos^2 \alpha}
-$$
-
-Second fraction:
-
-$$
-\frac{-3\cos^2 \alpha \sin^2 \alpha - \cos^4 \alpha}{\sin^2 \alpha} = -3\cos^2 \alpha - \frac{\cos^4 \alpha}{\sin^2 \alpha}
-$$
-
-Therefore, combining both terms:
-
-$$
-3\sin^2 \alpha + \frac{\sin^4 \alpha}{\cos^2 \alpha} - 3\cos^2 \alpha - \frac{\cos^4 \alpha}{\sin^2 \alpha}
-$$
-
-This seems complicated. Let me see if I can combine terms. Let me group the 3 sin²α - 3 cos²α and the other two fractions:
-
-First group: $3(\sin^2 \alpha - \cos^2 \alpha)$
-
-Second group: $\frac{\sin^4 \alpha}{\cos^2 \alpha} - \frac{\cos^4 \alpha}{\sin^2 \alpha}$
-
-Let me compute the second group. Let me write them as:
-
 $$
-\frac{\sin^6 \alpha - \cos^6 \alpha}{\sin^2 \alpha \cos^2 \alpha}
+\frac{\sin^3\alpha}{\cos\alpha}+\frac{\cos^3\alpha}{\sin\alpha}
+=\frac{\sin^4\alpha+\cos^4\alpha}{\sin\alpha\cos\alpha}.
 $$
 
-Because to combine the fractions, common denominator is $\sin^2 \alpha \cos^2 \alpha$:
+The numerator can be rewritten using sin² α + cos² α = 1:
 
-Numerator: $\sin^4 \alpha \cdot \sin^2 \alpha - \cos^4 \alpha \cdot \cos^2 \alpha$? Wait, no:
-
-Wait, original terms are $\frac{\sin^4 \alpha}{\cos^2 \alpha} - \frac{\cos^4 \alpha}{\sin^2 \alpha}$. So to combine:
-
-Multiply numerator and denominator accordingly:
-
-$$
-\frac{\sin^4 \alpha \cdot \sin^2 \alpha - \cos^4 \alpha \cdot \cos^2 \alpha}{\sin^2 \alpha \cos^2 \alpha}
-$$
-
-Wait, no. Wait, the first term is $\frac{\sin^4 \alpha}{\cos^2 \alpha}$, which is equal to $\frac{\sin^4 \alpha \cdot \sin^2 \alpha}{\sin^2 \alpha \cos^2 \alpha}$? No, that would be multiplying numerator and denominator by $\sin^2 \alpha$. Similarly for the second term. Let me do that:
-
-$$
-\frac{\sin^4 \alpha}{\cos^2 \alpha} = \frac{\sin^6 \alpha}{\sin^2 \alpha \cos^2 \alpha}
-$$
-$$
-\frac{\cos^4 \alpha}{\sin^2 \alpha} = \frac{\cos^6 \alpha}{\sin^2 \alpha \cos^2 \alpha}
-$$
-Therefore, the difference is:
-$$
-\frac{\sin^6 \alpha - \cos^6 \alpha}{\sin^2 \alpha \cos^2 \alpha}
-$$
-
-So the entire derivative is:
-
-$$
-3(\sin^2 \alpha - \cos^2 \alpha) + \frac{\sin^6 \alpha - \cos^6 \alpha}{\sin^2 \alpha \cos^2 \alpha}
-$$
-
-Hmm, maybe I can factor $\sin^6 \alpha - \cos^6 \alpha$. Let me recall that $a^3 - b^3 = (a - b)(a^2 + ab + b^2)$. So $\sin^6 \alpha - \cos^6 \alpha = (\sin^2 \alpha)^3 - (\cos^2 \alpha)^3 = (\sin^2 \alpha - \cos^2 \alpha)(\sin^4 \alpha + \sin^2 \alpha \cos^2 \alpha + \cos^4 \alpha)$
-
-Therefore, substituting back:
-
-$$
-\frac{(\sin^2 \alpha - \cos^2 \alpha)(\sin^4 \alpha + \sin^2 \alpha \cos^2 \alpha + \cos^4 \alpha)}{\sin^2 \alpha \cos^2 \alpha}
-$$
-
-Therefore, the derivative becomes:
-
-$$
-3(\sin^2 \alpha - \cos^2 \alpha) + (\sin^2 \alpha - \cos^2 \alpha) \cdot \frac{\sin^4 \alpha + \sin^2 \alpha \cos^2 \alpha + \cos^4 \alpha}{\sin^2 \alpha \cos^2 \alpha}
-$$
-
-Factor out $(\sin^2 \alpha - \cos^2 \alpha)$:
-
-$$
-(\sin^2 \alpha - \cos^2 \alpha) \left[ 3 + \frac{\sin^4 \alpha + \sin^2 \alpha \cos^2 \alpha + \cos^4 \alpha}{\sin^2 \alpha \cos^2 \alpha} \right]
-$$
-
-Now let me compute the term in the brackets. Let me denote:
-
-First, compute the numerator of the fraction:
-
-$$
-\sin^4 \alpha + \sin^2 \alpha \cos^2 \alpha + \cos^4 \alpha
-$$
-
-Earlier, I had that $\sin^4 \alpha + \cos^4 \alpha = 1 - 2\sin^2 \alpha \cos^2 \alpha$. Therefore, adding $\sin^2 \alpha \cos^2 \alpha$ gives:
-
-$$
-1 - 2\sin^2 \alpha \cos^2 \alpha + \sin^2 \alpha \cos^2 \alpha = 1 - \sin^2 \alpha \cos^2 \alpha
-$$
-
-Therefore, the term in the brackets becomes:
-
-$$
-3 + \frac{1 - \sin^2 \alpha \cos^2 \alpha}{\sin^2 \alpha \cos^2 \alpha} = 3 + \frac{1}{\sin^2 \alpha \cos^2 \alpha} - 1 = 2 + \frac{1}{\sin^2 \alpha \cos^2 \alpha}
-$$
-
-Therefore, the derivative simplifies to:
-
-$$
-(\sin^2 \alpha - \cos^2 \alpha) \left( 2 + \frac{1}{\sin^2 \alpha \cos^2 \alpha} \right)
-$$
-
-So, the derivative $f'(\alpha)$ is equal to:
-
-$$
-(\sin^2 \alpha - \cos^2 \alpha) \left( 2 + \frac{1}{\sin^2 \alpha \cos^2 \alpha} \right)
-$$
-
-Now, since $2 + \frac{1}{\sin^2 \alpha \cos^2 \alpha}$ is always positive (as both terms are positive for $\alpha \in (0, \frac{\pi}{2})$), the sign of the derivative depends on the sign of $\sin^2 \alpha - \cos^2 \alpha$. 
-
-Note that $\sin^2 \alpha - \cos^2 \alpha = -\cos 2\alpha$. Therefore, the sign of the derivative is determined by $-\cos 2\alpha$. 
-
-Let me analyze when the derivative is positive or negative. 
-
-- When $\alpha \in (0, \frac{\pi}{4})$, then $2\alpha \in (0, \frac{\pi}{2})$, so $\cos 2\alpha$ is positive, so $-\cos 2\alpha$ is negative. Therefore, the derivative is negative in this interval. 
-
-- When $\alpha \in (\frac{\pi}{4}, \frac{\pi}{2})$, then $2\alpha \in (\frac{\pi}{2}, \pi)$, so $\cos 2\alpha$ is negative, so $-\cos 2\alpha$ is positive. Therefore, the derivative is positive in this interval.
-
-At $\alpha = \frac{\pi}{4}$, $\cos 2\alpha = 0$, so derivative is zero. 
-
-Therefore, the function $f(\alpha)$ is decreasing on $(0, \frac{\pi}{4})$ and increasing on $(\frac{\pi}{4}, \frac{\pi}{2})$. Therefore, the minimum occurs at $\alpha = \frac{\pi}{4}$. 
-
-Therefore, the minimum value is:
-
-$$
-f\left(\frac{\pi}{4}\right) = \frac{\sin^3 \frac{\pi}{4}}{\cos \frac{\pi}{4}} + \frac{\cos^3 \frac{\pi}{4}}{\sin \frac{\pi}{4}}
-$$
-
-Since $\sin \frac{\pi}{4} = \cos \frac{\pi}{4} = \frac{\sqrt{2}}{2}$, substituting:
-
-First term: $\frac{\left(\frac{\sqrt{2}}{2}\right)^3}{\frac{\sqrt{2}}{2}} = \frac{\frac{2^{3/2}}{8}}{\frac{\sqrt{2}}{2}} = \frac{2^{3/2}}{8} \times \frac{2}{2^{1/2}}} = \frac{2^{3/2} \times 2}{8 \times 2^{1/2}}} = \frac{2^{2}}{8} = \frac{4}{8} = \frac{1}{2}$
-
-Similarly, the second term is the same, so total is $\frac{1}{2} + \frac{1}{2} = 1$. 
-
-Wait, so earlier when I did substitution with x, I also got 1. So both methods lead to the conclusion that the minimum value is 1. However, let me verify once again with another approach, maybe using inequalities like AM-GM or Cauchy-Schwarz.
-
-Let me consider the original expression:
-
-$$
-\frac{\sin^3 \alpha}{\cos \alpha} + \frac{\cos^3 \alpha}{\sin \alpha}
-$$
-
-Let me denote $a = \sin \alpha$, $b = \cos \alpha$, so that $a^2 + b^2 = 1$, and $a, b > 0$. Then the expression becomes:
-
-$$
-\frac{a^3}{b} + \frac{b^3}{a} = \frac{a^4 + b^4}{ab}
-$$
-
-As before, since $a^4 + b^4 = (a^2 + b^2)^2 - 2a^2b^2 = 1 - 2a^2b^2$, so the expression is:
-
-$$
-\frac{1 - 2a^2b^2}{ab}
-$$
-
-Which is the same as earlier. Alternatively, maybe I can write $\frac{a^4 + b^4}{ab}$. Let me think about how to minimize this. 
-
-Alternatively, maybe write $\frac{a^4 + b^4}{ab} = \frac{a^4}{ab} + \frac{b^4}{ab} = \frac{a^3}{b} + \frac{b^3}{a}$, which is the original expression. 
-
-Alternatively, perhaps apply Hölder's inequality or AM-GM. Let me try AM-GM. 
-
-We know that for positive numbers, AM-GM says that $\frac{x + y}{2} \geq \sqrt{xy}$. Let me consider the two terms $\frac{\sin^3 \alpha}{\cos \alpha}$ and $\frac{\cos^3 \alpha}{\sin \alpha}$. Let me denote them as $A$ and $B$. 
-
-Applying AM-GM on A and B:
-
-$$
-\frac{A + B}{2} \geq \sqrt{AB}
-$$
-
-Therefore:
-
 $$
-A + B \geq 2 \sqrt{AB}
+\sin^4\alpha+\cos^4\alpha
+=(\sin^2\alpha+\cos^2\alpha)^2-2\sin^2\alpha\cos^2\alpha
+=1-2\sin^2\alpha\cos^2\alpha.
 $$
 
-Compute AB:
+Substituting and splitting the fraction gives
 
 $$
-AB = \frac{\sin^3 \alpha}{\cos \alpha} \cdot \frac{\cos^3 \alpha}{\sin \alpha} = \sin^2 \alpha \cos^2 \alpha
+\frac{1-2\sin^2\alpha\cos^2\alpha}{\sin\alpha\cos\alpha}
+=\frac{1}{\sin\alpha\cos\alpha}-2\sin\alpha\cos\alpha.
 $$
 
-Therefore:
+Let x = sin α cos α. Since α ∈ (0, π/2), both factors are positive. Also,
 
 $$
-A + B \geq 2 \sqrt{\sin^2 \alpha \cos^2 \alpha} = 2 |\sin \alpha \cos \alpha| = 2 \sin \alpha \cos \alpha
+x=\frac{1}{2}\sin 2\alpha.
 $$
 
-Since $\alpha \in (0, \frac{\pi}{2})$, $\sin \alpha \cos \alpha > 0$. Therefore, the inequality becomes:
+The maximum is 1/2, attained at α = π/4. As α approaches either endpoint of (0, π/2), x approaches zero without reaching it. Therefore x ∈ (0, 1/2].
 
-$$
-A + B \geq 2 \sin \alpha \cos \alpha
-$$
-
-But this gives a lower bound of $2 \sin \alpha \cos \alpha$, which itself has a maximum at $\alpha = \frac{\pi}{4}$ (since $2 \sin \alpha \cos \alpha = \sin 2\alpha$), but we need a lower bound for $A + B$. However, this lower bound is not tight enough because $2 \sin \alpha \cos \alpha$ can be as low as approaching 0. Therefore, AM-GM gives a lower bound that isn't helpful here. 
+The expression is now f(x) = 1/x - 2x on this interval. Its derivative is
 
-Alternatively, maybe use Cauchy-Schwarz inequality. Let me recall that for positive numbers, $\frac{a^2}{x} + \frac{b^2}{y} \geq \frac{(a + b)^2}{x + y}$. However, our expression is $\frac{a^3}{b} + \frac{b^3}{a}$, which can be written as $\frac{a^4}{ab} + \frac{b^4}{ab}$. So if I consider Cauchy-Schwarz in the form:
-
 $$
-\frac{a^4}{ab} + \frac{b^4}{ab} \geq \frac{(a^2 + b^2)^2}{ab + ab} = \frac{(1)^2}{2ab} = \frac{1}{2ab}
+f'(x)=-\frac{1}{x^2}-2<0.
 $$
 
-Therefore, $A + B \geq \frac{1}{2ab}$. But again, since $ab$ can be as small as approaching 0, this gives a lower bound that tends to infinity? Wait, no, if $ab$ approaches 0, then $\frac{1}{2ab}$ approaches infinity, but our original expression $A + B$ also approaches infinity. Wait, but we are looking for the minimum value. Therefore, this inequality suggests that the minimum of $A + B$ is achieved when $\frac{1}{2ab}$ is minimized, which would be when $ab$ is maximized. Since $ab = \sin \alpha \cos \alpha$ is maximized at $\alpha = \frac{\pi}{4}$, with maximum value $\frac{1}{2}$. Therefore, substituting back:
+Thus f is strictly decreasing, and its minimum occurs at x = 1/2:
 
 $$
-A + B \geq \frac{1}{2 \times \frac{1}{2}} = 1
+f\left(\frac12\right)=\frac{1}{1/2}-2\left(\frac12\right)=2-1=1.
 $$
-
-And equality holds when? In Cauchy-Schwarz, equality holds when $\frac{a^4}{ab} = \frac{b^4}{ab}$, i.e., when $a^4 = b^4$, so $a = b$ since they are positive. Therefore, equality occurs when $a = b$, i.e., $\sin \alpha = \cos \alpha$, which is when $\alpha = \frac{\pi}{4}$. Therefore, the minimum value is indeed 1. 
-
-So, using Cauchy-Schwarz gives us the same result. Therefore, regardless of the method—whether calculus, substitution, or inequalities—the minimum value of the expression is 1, achieved at $\alpha = \frac{\pi}{4}$.
 
-Therefore, the answer should be $\boxed{1}$.
+As a check in the original expression, at α = π/4 we have sin α = cos α = √2/2. Each term then equals (√2/2)² = 1/2, so their sum is 1. This angle is inside the allowed interval, so the minimum is attained.
+</think>
 
 **Final Answer**
 \boxed{1}
-</think>
-
-To find the **minimum value** of the expression:
-
-$$
-\frac{\sin^3 \alpha}{\cos \alpha} + \frac{\cos^3 \alpha}{\sin \alpha}
-$$
-
-for $\alpha \in \left(0, \frac{\pi}{2}\right)$, we begin by simplifying the expression algebraically.
-
----
-
-### Step 1: Combine the Terms
-
-We write the expression with a common denominator:
-
-$$
-\frac{\sin^3 \alpha}{\cos \alpha} + \frac{\cos^3 \alpha}{\sin \alpha}
-= \frac{\sin^4 \alpha + \cos^4 \alpha}{\sin \alpha \cos \alpha}
-$$
-
-Now, recall the identity:
-
-$$
-\sin^4 \alpha + \cos^4 \alpha = (\sin^2 \alpha + \cos^2 \alpha)^2 - 2 \sin^2 \alpha \cos^2 \alpha = 1 - 2 \sin^2 \alpha \cos^2 \alpha
-$$
-
-Substituting this into the expression:
-
-$$
-\frac{1 - 2 \sin^2 \alpha \cos^2 \alpha}{\sin \alpha \cos \alpha}
-= \frac{1}{\sin \alpha \cos \alpha} - 2 \sin \alpha \cos \alpha
-$$
-
----
-
-### Step 2: Use Substitution
-
-Let $ x = \sin \alpha \cos \alpha $. Then the expression becomes:
-
-$$
-\frac{1}{x} - 2x
-$$
-
-We now analyze the function:
-
-$$
-f(x) = \frac{1}{x} - 2x
-$$
-
-on the interval $ x \in (0, \frac{1}{2}] $. This is because:
-
-$$
-\sin \alpha \cos \alpha = \frac{1}{2} \sin 2\alpha
-$$
-
-and since $\alpha \in (0, \frac{\pi}{2})$, we have $2\alpha \in (0, \pi)$, so $\sin 2\alpha \in (0, 1]$, and hence $x \in (0, \frac{1}{2}]$.
-
----
-
-### Step 3: Minimize the Function
-
-We compute the derivative of $f(x)$:
-
-$$
-f'(x) = -\frac{1}{x^2} - 2
-$$
-
-Since $f'(x) < 0$ for all $x > 0$, the function is **strictly decreasing** on $(0, \frac{1}{2}]$. Therefore, its **minimum** occurs at the right endpoint:
-
-$$
-x = \frac{1}{2}
-$$
-
-Substitute back into $f(x)$:
-
-$$
-f\left(\frac{1}{2}\right) = \frac{1}{\frac{1}{2}} - 2 \cdot \frac{1}{2} = 2 - 1 = 1
-$$
-
----
-
-### Step 4: Verify the Minimum is Attained
-
-We confirm that this minimum is attained when:
-
-$$
-\sin \alpha \cos \alpha = \frac{1}{2}
-\Rightarrow \sin 2\alpha = 1
-\Rightarrow 2\alpha = \frac{\pi}{2}
-\Rightarrow \alpha = \frac{\pi}{4}
-$$
-
-At $\alpha = \frac{\pi}{4}$, we compute the original expression:
-
-$$
-\frac{\sin^3 \frac{\pi}{4}}{\cos \frac{\pi}{4}} + \frac{\cos^3 \frac{\pi}{4}}{\sin \frac{\pi}{4}} = \frac{\left(\frac{\sqrt{2}}{2}\right)^3}{\frac{\sqrt{2}}{2}} + \frac{\left(\frac{\sqrt{2}}{2}\right)^3}{\frac{\sqrt{2}}{2}} = \frac{1}{2} + \frac{1}{2} = 1
-$$
-
----
-
-### Final Answer
-
-$$
-\boxed{1}
-$$

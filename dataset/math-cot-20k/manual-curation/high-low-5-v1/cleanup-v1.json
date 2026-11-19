@@ -1,0 +1,235 @@
+{
+  "version": "first-final-tail-cleanup-v1",
+  "date": "2026-11-19",
+  "status": "applied",
+  "scope": "10 editable response copies only; remove content after the first explicitly headed Final Answer and close think before that answer.",
+  "not_done": [
+    "No cleanup before the first explicit Final Answer",
+    "No proof or mathematical-answer rewriting",
+    "No training pipeline changes",
+    "No tokenizer/model loading or token-length recomputation"
+  ],
+  "originals_preserved_in": "originals.jsonl",
+  "records": [
+    {
+      "group": "high",
+      "row_index": 6430,
+      "file": "high/row-06430.response.txt",
+      "original_sample_id": "17655ab0652b8fb078a9181b33376bf68253e8171f1796428211920b56198f6a",
+      "original_response_sha256": "f545aa317a5a13de6a98322cb3d7c610fb6aa30012737c2c23bc21f02d19f114",
+      "edited_response_sha256": "4e516bcaa541b3f053bf847b837b2963a4d588cd20dd20a1d1a068d64d8a03aa",
+      "original_chars": 14759,
+      "edited_chars": 12074,
+      "net_removed_chars": 2685,
+      "original_first_final_heading_offset": 11968,
+      "retained_answer": "The equation of the circumscribed circle is \\boxed{(x - 2)^2 + (y - 2)^2 = 25}.",
+      "original_answer_body_span": [
+        11985,
+        12064
+      ],
+      "reasoning_prefix_unchanged": true,
+      "answer_paragraph_unchanged": true,
+      "structural_fix": "Moved the existing </think> immediately before the first Final Answer; only separator whitespace was normalized.",
+      "edited_token_count": null,
+      "training_ready": false
+    },
+    {
+      "group": "high",
+      "row_index": 2988,
+      "file": "high/row-02988.response.txt",
+      "original_sample_id": "e210428269c29a361505e8b8c68a9a3c32f8b385aad1195181c5e3d035454621",
+      "original_response_sha256": "3f2a5dba2774f4f58451a9175efb8ad9658bb8de0266d686b106d72afe1c60d5",
+      "edited_response_sha256": "9a771da8a9cb1107754478dc0c398ea91842cb5bc47d56db5fcf88bf207c8bc5",
+      "original_chars": 14206,
+      "edited_chars": 9362,
+      "net_removed_chars": 4844,
+      "original_first_final_heading_offset": 9164,
+      "retained_answer": "The real solutions are $\\boxed{\\left( \\frac{63}{2}, \\frac{21}{2} \\right)}$, $\\boxed{(20, 22)}$, $\\boxed{(28, 7)}$, and $\\boxed{\\left( \\frac{33}{2}, \\frac{37}{2} \\right)}$.",
+      "original_answer_body_span": [
+        9181,
+        9352
+      ],
+      "reasoning_prefix_unchanged": true,
+      "answer_paragraph_unchanged": true,
+      "structural_fix": "Moved the existing </think> immediately before the first Final Answer; only separator whitespace was normalized.",
+      "edited_token_count": null,
+      "training_ready": false
+    },
+    {
+      "group": "high",
+      "row_index": 4561,
+      "file": "high/row-04561.response.txt",
+      "original_sample_id": "bc5130cef094a9590ad6f55f3ed451d7288fb6a2310d707584898e12d118ced6",
+      "original_response_sha256": "10078115abef1f856f755ac432950212265acb6a14aca115509d97729d9bb2dc",
+      "edited_response_sha256": "ea9f087ee49d68b5aa6e68678d89c02b1e1888af450d7265efc0eb07874659de",
+      "original_chars": 13101,
+      "edited_chars": 11190,
+      "net_removed_chars": 1911,
+      "original_first_final_heading_offset": 11154,
+      "retained_answer": "\\boxed{0}",
+      "original_answer_body_span": [
+        11171,
+        11180
+      ],
+      "reasoning_prefix_unchanged": true,
+      "answer_paragraph_unchanged": true,
+      "structural_fix": "Moved the existing </think> immediately before the first Final Answer; only separator whitespace was normalized.",
+      "edited_token_count": null,
+      "training_ready": false
+    },
+    {
+      "group": "high",
+      "row_index": 14120,
+      "file": "high/row-14120.response.txt",
+      "original_sample_id": "e9e5d020ade2041a52f6be74eaf92248635714284f68f286dd91f7a4a416b26e",
+      "original_response_sha256": "23c497cf23b442ec3ed01c5aae79c3a343f4b96c144d3438133a75389b2c459b",
+      "edited_response_sha256": "df0bdc507470bb8a4a8838bba0348bcb5f99ff7944eaf3e8de2bae8c69b512c9",
+      "original_chars": 15685,
+      "edited_chars": 13358,
+      "net_removed_chars": 2327,
+      "original_first_final_heading_offset": 13267,
+      "retained_answer": "The three last digits of $10^{2022} - 9^{2022}$ are \\boxed{119}.",
+      "original_answer_body_span": [
+        13284,
+        13348
+      ],
+      "reasoning_prefix_unchanged": true,
+      "answer_paragraph_unchanged": true,
+      "structural_fix": "Moved the existing </think> immediately before the first Final Answer; only separator whitespace was normalized.",
+      "edited_token_count": null,
+      "training_ready": false
+    },
+    {
+      "group": "high",
+      "row_index": 1432,
+      "file": "high/row-01432.response.txt",
+      "original_sample_id": "575eda00f5b39e73855e8b028210fc6a6b0ed5a00dec8d304df9ef2eeb1514eb",
+      "original_response_sha256": "1edbc20776562f65d9c9c4182264d3a92c07900cd29e33ebfb425a7fb77e208b",
+      "edited_response_sha256": "f848ab04d5d743717d9f9b3bc313ce192239dd3034e789faa8622cdd30f5b333",
+      "original_chars": 17423,
+      "edited_chars": 15148,
+      "net_removed_chars": 2275,
+      "original_first_final_heading_offset": 15112,
+      "retained_answer": "\\boxed{1}",
+      "original_answer_body_span": [
+        15129,
+        15138
+      ],
+      "reasoning_prefix_unchanged": true,
+      "answer_paragraph_unchanged": true,
+      "structural_fix": "Moved the existing </think> immediately before the first Final Answer; only separator whitespace was normalized.",
+      "edited_token_count": null,
+      "training_ready": false
+    },
+    {
+      "group": "low",
+      "row_index": 16190,
+      "file": "low/row-16190.response.txt",
+      "original_sample_id": "38c0c38fe575610951f528cf4bc6d222b5d4d57f22059ce764a3eab932aefa61",
+      "original_response_sha256": "d3396bca6af7f29827dd0d22b10cea7d5077290d23052ed2dd9e601bcd8a4498",
+      "edited_response_sha256": "0545776f52e57ea151adbf3b0f87ad032f04dfa2010dd1bbb1d79531c0126ec6",
+      "original_chars": 23463,
+      "edited_chars": 20569,
+      "net_removed_chars": 2894,
+      "original_first_final_heading_offset": 20443,
+      "retained_answer": "The top of the ladder is sliding down the wall at a rate of \\boxed{\\dfrac{3}{4}} meters per second.",
+      "original_answer_body_span": [
+        20460,
+        20559
+      ],
+      "reasoning_prefix_unchanged": true,
+      "answer_paragraph_unchanged": true,
+      "structural_fix": "Moved the existing </think> immediately before the first Final Answer; only separator whitespace was normalized.",
+      "edited_token_count": null,
+      "training_ready": false
+    },
+    {
+      "group": "low",
+      "row_index": 15054,
+      "file": "low/row-15054.response.txt",
+      "original_sample_id": "633931c605c530c9b6cd9c481a498fec89af4957a9a27611c8d711dd3176ebd7",
+      "original_response_sha256": "25186ed48cca13ca5f4fc856371c979a780715b171a3b68e5c15b14eed5a173b",
+      "edited_response_sha256": "99d6cd0a1086515a93a1d619b2bac2ed147450a71d761bb928bc6f7f574b28d9",
+      "original_chars": 23782,
+      "edited_chars": 20881,
+      "net_removed_chars": 2901,
+      "original_first_final_heading_offset": 20845,
+      "retained_answer": "\\boxed{8}",
+      "original_answer_body_span": [
+        20862,
+        20871
+      ],
+      "reasoning_prefix_unchanged": true,
+      "answer_paragraph_unchanged": true,
+      "structural_fix": "Moved the existing </think> immediately before the first Final Answer; only separator whitespace was normalized.",
+      "edited_token_count": null,
+      "training_ready": false
+    },
+    {
+      "group": "low",
+      "row_index": 17772,
+      "file": "low/row-17772.response.txt",
+      "original_sample_id": "d9586e070e3c35bd581b3e2a1bb49c901e6feeee2dece8b7acb5340c30b7a91c",
+      "original_response_sha256": "6a2bb832ac75fcab3b30e968c21ac4ec5ee302a7c1166809950fc243d27ab429",
+      "edited_response_sha256": "61c0d17c25448a4addb4b4a550b096be4675533b70a6582f3bbfb14d512c9969",
+      "original_chars": 19162,
+      "edited_chars": 17184,
+      "net_removed_chars": 1978,
+      "original_first_final_heading_offset": 17097,
+      "retained_answer": "The number of different seating arrangements is \\boxed{768}.",
+      "original_answer_body_span": [
+        17114,
+        17174
+      ],
+      "reasoning_prefix_unchanged": true,
+      "answer_paragraph_unchanged": true,
+      "structural_fix": "Moved the existing </think> immediately before the first Final Answer; only separator whitespace was normalized.",
+      "edited_token_count": null,
+      "training_ready": false
+    },
+    {
+      "group": "low",
+      "row_index": 506,
+      "file": "low/row-00506.response.txt",
+      "original_sample_id": "90cd48b511822664f4922104ed8e9991eec41393c29502327cdca801e58ed49b",
+      "original_response_sha256": "6f5d72638b2d4a38b669256e1c0c0565c4f11900e5d2584cf60ab1e454a3c4c2",
+      "edited_response_sha256": "6b206741e6d7c10390c713c08a25f051d6d420f3bf09444bdc19f1dc6813a0aa",
+      "original_chars": 11686,
+      "edited_chars": 3445,
+      "net_removed_chars": 8241,
+      "original_first_final_heading_offset": 3334,
+      "retained_answer": "A is the knight and B is the liar, so \\boxed{A} is a knight and \\boxed{B} is a liar.",
+      "original_answer_body_span": [
+        3351,
+        3435
+      ],
+      "reasoning_prefix_unchanged": true,
+      "answer_paragraph_unchanged": true,
+      "structural_fix": "Moved the existing </think> immediately before the first Final Answer; only separator whitespace was normalized.",
+      "edited_token_count": null,
+      "training_ready": false
+    },
+    {
+      "group": "low",
+      "row_index": 10037,
+      "file": "low/row-10037.response.txt",
+      "original_sample_id": "391fb11fd7c0ebd41e60177bcf878559aa36cede0caa194accd2a4570fb2d669",
+      "original_response_sha256": "c6408eaf9bc49cbbfa9330771299044f9e2bd0c0ec910fd655fa738a3ae04e41",
+      "edited_response_sha256": "aaf6866f411b7bb1d7086bdd30c8bc053138249800993ac95d07795b1d41e68b",
+      "original_chars": 8755,
+      "edited_chars": 7014,
+      "net_removed_chars": 1741,
+      "original_first_final_heading_offset": 6977,
+      "retained_answer": "\\boxed{15}",
+      "original_answer_body_span": [
+        6994,
+        7004
+      ],
+      "reasoning_prefix_unchanged": true,
+      "answer_paragraph_unchanged": true,
+      "structural_fix": "Moved the existing </think> immediately before the first Final Answer; only separator whitespace was normalized.",
+      "edited_token_count": null,
+      "training_ready": false
+    }
+  ]
+}
