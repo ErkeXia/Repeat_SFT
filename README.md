@@ -17,6 +17,7 @@
 | 原始 Base 四任务基线 `run_base_vllm.sh` | 同一固定 MATH500 128＋GPQA 64＋BBH 100＋LiveCodeBench 100 | 仅 epoch 0；固定 BF16 Base，禁用 LoRA；两个面板各四组，并发 8、8192 上限 | 392 条完整回答与判分、四任务指标表/CSV/JSON、逐题报告；独立目录，逐题续跑 |
 | 连通与恢复测试 `smoke_test.py` | train 最短 7 条＋最长 1 条；少量 holdout/评测题 | 同正式 LoRA 配置；8 条×4 轮；比较连续训练与第 13 步崩溃后从第 8 步恢复 | loss、adapter、恢复状态、逐位比较、生成与判分、`SUCCESS.json` |
 | 随机基线 `train.py` | 固定 400 道 Math-CoT 数学题及其完整原解答 | 默认 BF16 LoRA，64 轮，每题一次更新 | 每步日志、每轮耗时/进度、8 个关键 adapter、滚动恢复点 |
+| [延长已完成的训练](dataset/CONTINUE_TRAINING.md) `dataset/continue_training.py` | 原 run 的冻结训练集；本次为人工改写的 10 条 | 从最后完整状态续训，默认再加 128 轮、每 16 轮保存；128→256 共新增 1,280 次更新，学习率不重新预热 | 独立目录、8 个新增完整 checkpoint、逐步日志和中断恢复；兼容现有四任务评测 |
 | 补存中间节点 `replay_train.py` | 原 run 冻结的同一 400 条训练数据 | 从原完整 checkpoint 及原训练代码恢复；默认补 6/7/9/10/12/14/20/22/26/30，共 9,200 次更新 | 独立新 run、10 个完整 checkpoint、逐步日志、来源/空间计划；可中断恢复，不比较新旧轨迹 |
 | 初始 loss 分组 `score_pool.py` → `select_groups.py` → `train.py` | 同一候选池；low/mid/high 各 400 条 | 同精度冻结 Base 打分；按来源和解答长度分层匹配；各组从 Base 初始化 LoRA | 初始 loss、选题全文、匹配统计、各组独立训练曲线 |
 | 速度对比 `benchmark_train.py` | 同一 400 条训练数据，每组一轮 | batch 1/4 × SDPA/FlashAttention 2，四组均使用 LoRA | 耗时、tokens/s、峰值显存、attention 证据、失败原因；可选 adapter |

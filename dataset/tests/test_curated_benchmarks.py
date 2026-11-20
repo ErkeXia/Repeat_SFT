@@ -113,6 +113,26 @@ class CuratedBenchmarkTests(unittest.TestCase):
                     for key in ('sample_id','question_id','messages','gold_answer','question'):
                         self.assertEqual(left[key], right[key])
 
+    def test_continued_run_new_epochs_work_with_existing_four_task_suite(self):
+        metadata = read_json(self.run / 'run.json')
+        metadata['config'].update(epochs=256, checkpoint_epochs=list(range(144, 257, 16)))
+        metadata['continuation'] = {'start_epoch': 128, 'start_step': 1280}
+        metadata['config_sha256'] = digest(metadata['config'])
+        write_json(self.run / 'run.json', metadata)
+        for epoch in metadata['config']['checkpoint_epochs']:
+            make_checkpoint(self.run / 'checkpoints' / f'epoch-{epoch:03d}', metadata, epoch)
+        plan = self.prepare(children=False)
+        self.assertEqual(plan['epochs'], [256, 240, 224, 208, 192, 176, 160, 144])
+        self.assertEqual(plan['responses'], 8 * 392)
+        # Exercise both original child panel protocols for a continued epoch.
+        suite.prepare_panels(self.job, {**plan, 'epochs': [256]})
+        for name, size in [('math-gpqa', 48), ('bbh-livecodebench', 50)]:
+            child = self.job / 'epochs/epoch-256' / name
+            info = read_json(child / 'setup/plan.json')
+            self.assertEqual(info['generation_epochs'], [256])
+            self.assertEqual(len(info['groups']), 4)
+            self.assertTrue(all(len(g['selected_ids']) == size for g in info['groups']))
+
     def test_missing_checkpoint_and_changed_resume_arguments_fail(self):
         (self.run / 'checkpoints/epoch-112/complete.json').unlink()
         with self.assertRaises(FileNotFoundError):
