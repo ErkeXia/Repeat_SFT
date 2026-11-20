@@ -12,6 +12,7 @@
 - [High/Low 四个 benchmark：一次启动 vLLM 评测、判分与报告](LIKELIHOOD_BENCHMARKS.md)
 - [人工改写 10 条：Base 似然度后，从 Base 训练 128 轮 LoRA](CURATED_TRAINING.md)
 - [仅原高似然组的 5 条人工回答：64 轮 LoRA、每 16 轮保存、可继续续训](CURATED_HIGH5.md)
+- [High 5 条检查点：64→48→32→16 四任务评测、逐节点报告及四表总报告](CURATED_HIGH5_BENCHMARKS.md)
 - [人工回答似然度对比：复用 Base，新增 epoch 64 / 128 的 vLLM 评分](CURATED_CHECKPOINT_LIKELIHOOD.md)
 - [从完整检查点续训：128 → 256 轮，保留原实验并支持中断恢复](CONTINUE_TRAINING.md)
 - [改写数据检查点：按 epoch 倒序做四任务评测及统一报告](CURATED_BENCHMARKS.md)

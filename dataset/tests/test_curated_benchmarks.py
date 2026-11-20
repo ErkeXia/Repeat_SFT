@@ -2,6 +2,7 @@
 import csv
 import os
 from pathlib import Path
+import shutil
 import sys
 import tempfile
 import time
@@ -132,6 +133,44 @@ class CuratedBenchmarkTests(unittest.TestCase):
             self.assertEqual(info['generation_epochs'], [256])
             self.assertEqual(len(info['groups']), 4)
             self.assertTrue(all(len(g['selected_ids']) == size for g in info['groups']))
+
+    def test_high_five_run_four_requested_checkpoints_and_fixed_panels(self):
+        from dataset.train_curated_high5 import training_config as high_config
+        source = self.run
+        before = tree_hashes(source), tree_hashes(self.panel)
+        self.run = self.root / 'high5'
+        shutil.copytree(source / 'data', self.run / 'data')
+        shutil.copytree(source / 'tokenizer', self.run / 'tokenizer')
+        training = list(iter_jsonl(source / 'data/train.jsonl'))[:5]
+        write_jsonl(self.run / 'data/train.jsonl', training)
+        metadata = read_json(source / 'run.json')
+        metadata['config'] = high_config(metadata['config'], 42)
+        metadata['data_files'] = tree_hashes(self.run / 'data')
+        metadata['config_sha256'] = digest(metadata['config'])
+        write_json(self.run / 'run.json', metadata)
+        for epoch in metadata['config']['checkpoint_epochs']:
+            make_checkpoint(self.run / 'checkpoints' / f'epoch-{epoch:03d}', metadata, epoch)
+        self.args.epochs = '16,32,48,64'
+        plan = self.prepare()
+        self.assertEqual(plan['epochs'], [64,48,32,16])
+        self.assertEqual(plan['responses'], 1568)
+        self.assertNotIn('0', plan['checkpoints'])
+        self.assertEqual(plan['engine']['max_num_seqs'], 8)
+        self.assertEqual(plan['generation']['max_new_tokens'], 8192)
+        for epoch in plan['epochs']:
+            self.assertEqual(read_json(self.run / 'checkpoints' / f'epoch-{epoch:03d}/complete.json')['step'], epoch * 5)
+            for name, expected, size in [('math-gpqa', self.math, 48), ('bbh-livecodebench', self.transfer, 50)]:
+                child = self.job / 'epochs' / f'epoch-{epoch:03d}' / name
+                child_plan = read_json(child / 'setup/plan.json')
+                self.assertEqual(child_plan['generation_epochs'], [epoch])
+                self.assertEqual(len(child_plan['groups']), 4)
+                self.assertTrue(all(len(g['selected_ids']) == size for g in child_plan['groups']))
+                questions, _ = load_panel(child / 'setup/panel')
+                for actual, original in zip(questions, expected):
+                    for key in ('sample_id', 'question_id', 'messages', 'gold_answer'):
+                        self.assertEqual(actual[key], original[key])
+        self.assertEqual(before, (tree_hashes(source), tree_hashes(self.panel)))
+        self.assertEqual(suite.prepare(self.run, self.panel, self.job, self.args), plan)
 
     def test_missing_checkpoint_and_changed_resume_arguments_fail(self):
         (self.run / 'checkpoints/epoch-112/complete.json').unlink()

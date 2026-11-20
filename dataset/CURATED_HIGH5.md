@@ -78,6 +78,6 @@ echo "续训 PID=$!"
 
 从 step 320 恢复到 step 640，新增节点 **80、96、112、128**；不重新预热、不重置优化器，继续用同一五条数据。新目录保留起点副本，原 0–64 的实验保持完整。续训中断后重复续训命令即可；也可改 `--additional-epochs`，但已启动的任务要保持参数不变。
 
-训练和续训完成后，标准 `train/` 目录兼容现有 `evaluate_loss.py` 及 `dataset/run_curated_benchmarks.sh`。四任务脚本默认评测该 run 配置中的节点，仍是每个 epoch 的四项任务全部完成后再开始下一 epoch；新五条训练集与评测题会重新做重合检查。训练入口不会自动占用 GPU 启动评测。
+训练和续训完成后，标准 `train/` 目录兼容现有 `evaluate_loss.py` 及 `dataset/run_curated_benchmarks.sh`。本次 **16、32、48、64** 的专用入口为 `dataset/run_curated_high5_benchmarks.sh`，按 64→48→32→16 评测，详见 [High 5 条四任务评测](CURATED_HIGH5_BENCHMARKS.md)。每个 epoch 的四项任务全部完成后再开始下一 epoch；每节点统一报告，总报告四张任务表，支持逐题恢复。训练入口不会自动启动评测。
 
 离线验证：`python -B -m unittest discover -s dataset/tests -p test_curated_high5.py -v`。使用真实五条文本和模拟子进程检查选题、冻结、Base 初始化路径、中途恢复、完整状态及后续扩展计划；实际大模型 BF16/LoRA 训练在 VM 上执行。
