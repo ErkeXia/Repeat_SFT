@@ -46,7 +46,8 @@ def initialize(out, plan):
     return job
 
 
-async def score_pending(engine, sampling, out, job, rows, tokenizer, index, done, concurrency=8):
+async def score_pending(engine, sampling, out, job, rows, tokenizer, index, done, concurrency=8,
+                        *, lora_request=None, label="BASE SCORE", request_prefix="curated"):
     expected = {r["row_index"]: r for r in index}
     pending = iter(r for r in rows if r["row_index"] not in done)
     finished = len(done)
@@ -57,10 +58,11 @@ async def score_pending(engine, sampling, out, job, rows, tokenizer, index, done
             encoded = encode_example(tokenizer, row, 10240)
             if encoded is None or describe(row, encoded) != expected[row["row_index"]]:
                 raise ValueError("Scoring and training tokenization differ from the frozen index")
-            request_id = f"curated-{row['row_index']}"
+            request_id = f"{request_prefix}-{row['row_index']}"
             final = None
             try:
-                async for result in engine.generate({"prompt_token_ids": encoded["input_ids"]}, sampling, request_id):
+                options = {"lora_request": lora_request} if lora_request is not None else {}
+                async for result in engine.generate({"prompt_token_ids": encoded["input_ids"]}, sampling, request_id, **options):
                     if result.finished:
                         final = result
                 if final is None:
@@ -76,7 +78,7 @@ async def score_pending(engine, sampling, out, job, rows, tokenizer, index, done
             finished += 1
             append_jsonl(out / "progress.jsonl", {"timestamp": now(), "completed": finished,
                          "row_index": row["row_index"], "mean_nll": score["mean_nll"]})
-            print(f"BASE SCORE {finished}/{len(rows)} row={row['row_index']} "
+            print(f"{label} {finished}/{len(rows)} row={row['row_index']} "
                   f"tokens={score['n_tokens']} nll={score['mean_nll']:.6f} "
                   f"likelihood={score['normalized_likelihood']:.6f}", flush=True)
 
@@ -140,10 +142,10 @@ async def execute(out, job, plan, rows, tokenizer, index, done):
     return 0
 
 
-def build_report(out, job, rows, index):
+def build_report(out, job, rows, index, *, model_label="Base"):
     scores = load_scores(out, job, index)
     if len(scores) != len(rows):
-        raise ValueError("Base scoring must finish all ten samples before training")
+        raise ValueError("Scoring must finish all ten samples before publishing the model report")
     combined = [{**row, **scores[row["row_index"]]} for row in rows]
     ranked = sorted(combined, key=lambda r: (-r["mean_logprob"], r["row_index"]))
     write_jsonl(out / "samples.jsonl", ranked)  # Full questions, prompts and edited answers.
@@ -170,10 +172,10 @@ def build_report(out, job, rows, index):
         writer.writeheader()
         for row in ranked:
             writer.writerow({key: row["curation"][key] if key == "historical_group" else row[key] for key in fields})
-    body = ['<!doctype html><html lang="zh"><meta charset="utf-8"><title>Curated Base likelihood</title>',
+    body = [f'<!doctype html><html lang="zh"><meta charset="utf-8"><title>Curated {escape(model_label)} likelihood</title>',
             '<style>body{max-width:1050px;margin:32px auto;padding:16px;font:16px/1.6 sans-serif}'
             'pre{white-space:pre-wrap;overflow-wrap:anywhere}details{border-top:1px solid #ccc;padding:16px 0}</style>',
-            '<h1>10 条改写回答的 Base 似然度</h1>',
+            f'<h1>10 条改写回答的 {escape(model_label)} 似然度</h1>',
             '<p>仅统计助手推理、最终答案及结束符；归一化似然 = exp(平均 token logprob)。'
             'High/Low 表示改写前的历史分组。本报告按改写后的平均似然排序。</p>',
             '<pre>' + escape(json.dumps(summary, ensure_ascii=False, indent=2)) + '</pre>']
