@@ -15,6 +15,7 @@
 | 新增迁移评测 `run_transfer_vllm.sh` | 已准备的 BBH 100 + LiveCodeBench 100 | 原 run 的 64→32→16→8→4；四组各 25+25 题；vLLM 并发 8，8192 上限；BBH 精确答案、LCB Docker 执行公开/隐藏测试 | 1000 条完整回答、逐题判分、代码测试详情、正确率/长度/结束/提取指标与逐题轨迹报告；生成和判分均可续跑 |
 | 新节点四任务评测 `run_intermediate_vllm.sh` | 原固定 MATH500 128＋GPQA 64＋BBH 100＋LiveCodeBench 100 | 补跑 run 的十个新节点降序；两个面板分别四组（48/50 题），vLLM 并发 8、8192 上限，不要求先做拟合 | 3920 条完整回答、判分、两套面板曲线和逐题报告；逐题续跑，独立目录 |
 | 原始 Base 四任务基线 `run_base_vllm.sh` | 同一固定 MATH500 128＋GPQA 64＋BBH 100＋LiveCodeBench 100 | 仅 epoch 0；固定 BF16 Base，禁用 LoRA；两个面板各四组，并发 8、8192 上限 | 392 条完整回答与判分、四任务指标表/CSV/JSON、逐题报告；独立目录，逐题续跑 |
+| [Base 解三组训练题](TRAINING_BASE_EVALUATION.md) `run_training_base_vllm.sh` | 实际 random 400、high 100、low 100 条 Math-CoT-20k 训练题 | 固定 BF16 Base、禁用 LoRA；只输入原题及原提示词；vLLM 并发 8、8192 上限；相同题目及提示词复用一次生成 | 三组正确率/长度/结束/提取指标，HTML/CSV/JSON，原题、参考解答及 Base 完整回答/token IDs；独立目录，生成与判分均可续跑 |
 | 连通与恢复测试 `smoke_test.py` | train 最短 7 条＋最长 1 条；少量 holdout/评测题 | 同正式 LoRA 配置；8 条×4 轮；比较连续训练与第 13 步崩溃后从第 8 步恢复 | loss、adapter、恢复状态、逐位比较、生成与判分、`SUCCESS.json` |
 | 随机基线 `train.py` | 固定 400 道 Math-CoT 数学题及其完整原解答 | 默认 BF16 LoRA，64 轮，每题一次更新 | 每步日志、每轮耗时/进度、8 个关键 adapter、滚动恢复点 |
 | [人工 High 5 条训练](dataset/CURATED_HIGH5.md) `dataset/train_curated_high5.py` | 10 条人工回答中的原高似然组 5 条冻结文本 | 从 Base 初始化 LoRA，64 轮共 320 次更新，保存 0/16/32/48/64；100 步预热等于 20 轮 | 独立训练目录、完整状态、逐步 loss/学习率和计时；中断恢复及后续增加轮数 |

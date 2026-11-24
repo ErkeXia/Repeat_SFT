@@ -10,6 +10,7 @@
 - [在 VM 上计算 Math-CoT-20k 全集 Base 似然并生成阅读报告](LIKELIHOOD.md)
 - [高/低似然各 100 条：一次启动两组 16 轮 LoRA 训练](LIKELIHOOD_TRAINING.md)
 - [High/Low 四个 benchmark：一次启动 vLLM 评测、判分与报告](LIKELIHOOD_BENCHMARKS.md)
+- [Base 独立解 random 400 / high 100 / low 100 训练题：vLLM、逐题恢复和阅读报告](../TRAINING_BASE_EVALUATION.md)
 - [人工改写 10 条：Base 似然度后，从 Base 训练 128 轮 LoRA](CURATED_TRAINING.md)
 - [仅原高似然组的 5 条人工回答：64 轮 LoRA、每 16 轮保存、可继续续训](CURATED_HIGH5.md)
 - [High 5 条检查点：64→48→32→16 四任务评测、逐节点报告及四表总报告](CURATED_HIGH5_BENCHMARKS.md)
