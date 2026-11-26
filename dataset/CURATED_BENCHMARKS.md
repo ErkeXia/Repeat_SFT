@@ -4,6 +4,8 @@
 
 每个 epoch 必须完成全部 392 道题的生成和判分、发布该 epoch 的四任务统一报告后，才进入下一个 epoch。所有选择的检查点必须已经存在；不会默默跳过缺失节点。若暂时只完成部分训练，用 `--epochs 64,48,32,16,0` 等明确选择，并使用独立的 `--job-name`。
 
+如需按给出的顺序执行，可在新任务显式添加 `--epoch-order listed --epochs ...`。默认仍为降序；顺序首次冻结后不可在同一 job 中改动。五题型 50 条实验的优先节点及补齐顺序已配置在 [专用入口](TOPIC_BENCHMARKS.md)。
+
 ## 在 VM 上启动
 
 `git pull` 后，确认 `/data` 已挂载、原 vLLM 0.11.0 环境可用、LiveCodeBench Docker 镜像 `repeat-sft-lcb:py311-v1` 已构建并通过 self-test，当前用户可执行 `docker info`。

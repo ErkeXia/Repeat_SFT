@@ -19,6 +19,7 @@
 | 连通与恢复测试 `smoke_test.py` | train 最短 7 条＋最长 1 条；少量 holdout/评测题 | 同正式 LoRA 配置；8 条×4 轮；比较连续训练与第 13 步崩溃后从第 8 步恢复 | loss、adapter、恢复状态、逐位比较、生成与判分、`SUCCESS.json` |
 | 随机基线 `train.py` | 固定 400 道 Math-CoT 数学题及其完整原解答 | 默认 BF16 LoRA，64 轮，每题一次更新 | 每步日志、每轮耗时/进度、8 个关键 adapter、滚动恢复点 |
 | [五题型各十题](dataset/TOPIC_BALANCED_TRAINING.md) `dataset/train_topic_balanced.py` | 原 Math-CoT-20k 合格池中：代数、几何、数论、组合概率、微积分各 10 条 | 题目关键词保守分类；fresh Base BF16 LoRA；50 条混合训练 16 轮，共 800 次更新 | 选题全文报告/分类依据、冻结配置与代码、epoch 0–16 每轮完整检查点、日志与可恢复状态 |
+| [五题型实验四任务评测](dataset/TOPIC_BENCHMARKS.md) `dataset/run_topic_benchmarks.sh` | 固定 MATH500 128＋GPQA 64＋BBH 100＋LiveCodeBench 100 | 先 1→2→3→4→8→12→16，再升序补齐其余 epoch；每节点完成全部四任务后继续；vLLM 并发 8、8192 上限 | 6,272 条完整回答；每节点即时报告、四张任务表的总报告；逐题保存与中断续跑 |
 | [人工 High 5 条训练](dataset/CURATED_HIGH5.md) `dataset/train_curated_high5.py` | 10 条人工回答中的原高似然组 5 条冻结文本 | 从 Base 初始化 LoRA，64 轮共 320 次更新，保存 0/16/32/48/64；100 步预热等于 20 轮 | 独立训练目录、完整状态、逐步 loss/学习率和计时；中断恢复及后续增加轮数 |
 | [High 5 条四任务评测](dataset/CURATED_HIGH5_BENCHMARKS.md) `dataset/run_curated_high5_benchmarks.sh` | 固定 MATH500 128＋GPQA 64＋BBH 100＋LiveCodeBench 100 | 64→48→32→16；每节点全部四任务完成后进入下一节点；vLLM 并发 8、8192 上限 | 共 1,568 条回答；每节点四任务统一报告、四张任务表的总报告；支持逐题续跑 |
 | [延长已完成的训练](dataset/CONTINUE_TRAINING.md) `dataset/continue_training.py` | 原 run 的冻结训练集；本次为人工改写的 10 条 | 从最后完整状态续训，默认再加 128 轮、每 16 轮保存；128→256 共新增 1,280 次更新，学习率不重新预热 | 独立目录、8 个新增完整 checkpoint、逐步日志和中断恢复；兼容现有四任务评测 |

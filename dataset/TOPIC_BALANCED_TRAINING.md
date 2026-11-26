@@ -98,6 +98,8 @@ python -B evaluate_loss.py \
 
 它统计选中的 50 条及原 200 条 holdout 的逐样本 loss / token 准确率，不是四个 benchmark 的自由生成。当前新入口只自动执行选题和训练。
 
+四个 benchmark 的自由生成使用 [run_topic_benchmarks.sh](TOPIC_BENCHMARKS.md)：先测 1、2、3、4、8、12、16，再升序补齐其他轮次；vLLM 并发 8，每轮全部四任务完成后立即出报告，支持逐题续跑。
+
 以后继续增加 16 轮、仍每轮保存，可使用已有续训入口，原目录完整保留：
 
 ```bash

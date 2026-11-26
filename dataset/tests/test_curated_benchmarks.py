@@ -3,6 +3,7 @@ import csv
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -303,6 +304,145 @@ class CuratedBenchmarkTests(unittest.TestCase):
         self.assertEqual(text.count('<table>'), 4)
         self.assertEqual(text.count('未完成，未计入统计'), 36)
         self.assertNotIn('href="curves.csv"', text)
+
+    def topic_fixture(self):
+        from dataset.train_topic_balanced import training_config as topic_config
+        original = self.run
+        self.run = self.root / 'topics'
+        shutil.copytree(original / 'data', self.run / 'data')
+        shutil.copytree(original / 'tokenizer', self.run / 'tokenizer')
+        training = [adapt_sft({'question': f'Topic training arithmetic {i}', 'response': f'Compute {i}',
+                               'answer': str(i)}, i) for i in range(50)]
+        write_jsonl(self.run / 'data/train.jsonl', training)
+        metadata = read_json(original / 'run.json')
+        metadata['config'] = topic_config(metadata['config'], 42)
+        metadata['data_files'] = tree_hashes(self.run / 'data')
+        metadata['config_sha256'] = digest(metadata['config'])
+        write_json(self.run / 'run.json', metadata)
+        for epoch in metadata['config']['checkpoint_epochs']:
+            make_checkpoint(self.run / 'checkpoints' / f'epoch-{epoch:03d}', metadata, epoch)
+        self.args.epoch_order = 'listed'
+        return metadata
+
+    def test_topic_priority_schedule_and_resume_order_are_frozen(self):
+        self.topic_fixture()
+        expected = [1,2,3,4,8,12,16,5,6,7,9,10,11,13,14,15]
+        self.args.epochs = ','.join(map(str, expected))
+        before = tree_hashes(self.run), tree_hashes(self.panel)
+        plan = self.prepare(children=False)
+        self.assertEqual(plan['epochs'], expected)
+        self.assertEqual(plan['epoch_order'], 'listed')
+        self.assertEqual(plan['responses'], 6272)
+        self.assertEqual(plan['engine']['max_num_seqs'], 8)
+        self.assertEqual(plan['generation']['max_new_tokens'], 8192)
+        self.assertEqual(set(plan['checkpoints']), set(map(str, range(1, 17))))
+        self.assertEqual(self.prepare(children=False), plan)
+        self.assertEqual(before, (tree_hashes(self.run), tree_hashes(self.panel)))
+        # Same checkpoint set in another order must not silently reorder resume.
+        self.args.epochs = ','.join(map(str, sorted(expected)))
+        with self.assertRaisesRegex(ValueError, 'inputs differ'):
+            self.prepare(children=False)
+        self.args.epochs = ','.join(map(str, expected))
+        self.args.epoch_order = 'descending'
+        with self.assertRaisesRegex(ValueError, 'inputs differ'):
+            self.prepare(children=False)
+
+    def test_listed_order_validation_retains_legacy_descending_behavior(self):
+        self.assertEqual(suite.scheduled_epochs('1,4,2', 'listed'), [1,4,2])
+        self.assertEqual(suite.scheduled_epochs('1,4,2'), [4,2,1])
+        for value in ('1,1,2', '1,-1', '', '1,wrong'):
+            with self.assertRaises(ValueError):
+                suite.scheduled_epochs(value, 'listed')
+
+    def test_topic_nonmonotonic_barriers_reports_and_partial_resume(self):
+        self.topic_fixture()
+        self.args.epochs = '4,16,5'
+        plan = self.prepare()
+        calls, interrupted = [], [False]
+
+        def child_invoke(command, cwd):
+            script = Path(command[3]).name
+            out = Path(command[command.index('--out') + 1])
+            child = out.parents[2]
+            child_plan = read_json(child / 'setup/plan.json')
+            epoch = child_plan['generation_epochs'][0]
+            group = next(g for g in child_plan['groups'] if g['name'] == out.parent.name)
+            prior = plan['epochs'][:plan['epochs'].index(epoch)]
+            self.assertEqual(read_json(self.job / 'report/summary.json')['completed_epochs'], sorted(prior))
+            for earlier in prior:
+                self.assertTrue((self.job / 'epochs' / f'epoch-{earlier:03d}/complete.json').exists())
+                self.assertTrue((self.job / 'epochs' / f'epoch-{earlier:03d}/report/report.html').exists())
+            calls.append((epoch, child.name, group['name'], script))
+            if script == 'generate_vllm.py':
+                stop = (epoch == 5 and child.name == 'bbh-livecodebench'
+                        and group['name'] == 'group-002' and not interrupted[0])
+                if stop:
+                    interrupted[0] = True
+                generated(child, group, [epoch], stop)
+            else:
+                grade_transfer.grade_directory(out.parent / 'generation', child / 'setup/panel', out,
+                                                None if child.name == 'math-gpqa' else self.judge)
+
+        def invoke(command, cwd):
+            transfer_evaluation.execute(Path(command[-1]), SimpleNamespace(invoke=child_invoke, check_stop=lambda: None))
+
+        worker = SimpleNamespace(invoke=invoke, check_stop=lambda: None)
+        with patch('builtins.print'):
+            with self.assertRaisesRegex(RuntimeError, 'interrupted generation'):
+                suite.execute(self.job, worker)
+        self.assertEqual(suite.completed_epochs(self.job, plan), [4,16])
+        preserved = {e: tree_hashes(self.job / 'epochs' / f'epoch-{e:03d}') for e in (4,16)}
+        pending = self.job / 'epochs/epoch-005/bbh-livecodebench/groups/group-002/generation/epoch-005/responses.jsonl'
+        prefix = pending.read_bytes()
+        self.assertTrue(prefix)
+        self.assertFalse((self.job / 'epochs/epoch-005/report/report.html').exists())
+        self.assertFalse((self.job / 'complete.json').exists())
+        partial_html = (self.job / 'report/report.html').read_text(encoding='utf-8')
+        self.assertEqual(partial_html.count('<table>'), 4)
+        self.assertIn('未完成', partial_html)
+        with patch('builtins.print'):
+            suite.execute(self.job, worker)
+        for epoch, hashes in preserved.items():
+            self.assertEqual(tree_hashes(self.job / 'epochs' / f'epoch-{epoch:03d}'), hashes)
+        self.assertTrue(pending.read_bytes().startswith(prefix))
+        self.assertEqual(self.judge.calls, 300)  # Three epochs, each code answer graded only once.
+        self.assertEqual(list(dict.fromkeys(c[0] for c in calls)), [4,16,5])
+        self.assertEqual(read_json(self.job / 'complete.json')['epochs'], [4,16,5])
+        summary = read_json(self.job / 'report/summary.json')
+        self.assertTrue(summary['complete'])
+        self.assertEqual(summary['completed_epochs'], [4,5,16])
+        self.assertEqual(summary['responses_completed'], 1176)
+        final_html = (self.job / 'report/report.html').read_text(encoding='utf-8')
+        self.assertEqual(final_html.count('<table>'), 4)
+        for task, label in reports.TASKS.items():
+            self.assertEqual([r['epoch'] for r in summary['curves'] if r['task'] == task], [4,5,16])
+            self.assertIn(f'<h2>{label}</h2>', final_html)
+        for epoch in (4,16,5):
+            html = (self.job / 'epochs' / f'epoch-{epoch:03d}/report/report.html').read_text(encoding='utf-8')
+            self.assertEqual(html.count('<details id='), 392)
+            self.assertEqual(html.count('<table>'), 1)
+        count = len(calls)
+        with patch('builtins.print'):
+            suite.execute(self.job, worker, report_only=True)
+            suite.execute(self.job, worker)
+        self.assertEqual(len(calls), count)
+
+    def test_topic_shell_entry_forwards_priority_defaults_and_flags(self):
+        bash = str(Path('C:/Program Files/Git/bin/bash.exe')) if os.name == 'nt' else shutil.which('bash')
+        if not bash or not Path(bash).is_file():
+            self.skipTest('Bash unavailable')
+        fake = self.root / 'fake-vllm-python'
+        fake.write_text('#!/usr/bin/env bash\nprintf "%s\\0" "$@"\n', encoding='utf-8', newline='\n')
+        fake.chmod(0o755)
+        result = subprocess.run([bash, str(ROOT / 'dataset/run_topic_benchmarks.sh'), '--report-only'],
+                                env={**os.environ, 'VLLM_PYTHON_BIN': fake.as_posix()},
+                                capture_output=True, text=True, check=True)
+        args = result.stdout.rstrip('\0').split('\0')
+        self.assertEqual(args[args.index('--run') + 1], 'runs/topic-balanced-50x16-s42/train')
+        self.assertEqual(args[args.index('--epoch-order') + 1], 'listed')
+        self.assertEqual(args[args.index('--epochs') + 1], '1,2,3,4,8,12,16,5,6,7,9,10,11,13,14,15')
+        self.assertEqual(args[args.index('--job-name') + 1], 'four-benchmarks-priority-vllm-v1')
+        self.assertEqual(args[-1], '--report-only')
 
 
 if __name__ == '__main__':

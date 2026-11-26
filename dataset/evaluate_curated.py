@@ -33,6 +33,20 @@ EXTRA_CODE = ('__init__.py', 'evaluate_curated.py', 'curated_benchmark_report.py
               'evaluate_likelihood_extremes.py', 'likelihood_training.py', 'likelihood_utils.py')
 
 
+def scheduled_epochs(value, order='descending'):
+    """Validate with the shared parser, optionally retaining the requested order.
+
+    Other evaluation entries keep their existing descending behavior. The order
+    is part of this suite's frozen plan and cannot change on resume.
+    """
+    descending = generation_epochs(value)
+    if order == 'descending':
+        return descending
+    if order == 'listed':
+        return [int(part.strip()) for part in value.split(',')]
+    raise ValueError('--epoch-order must be descending or listed')
+
+
 def verify(job):
     suite = job / 'suite'
     if read_json(suite / 'complete.json')['plan_sha256'] != file_hash(suite / 'plan.json'):
@@ -56,10 +70,12 @@ def verify(job):
 
 
 def prepare(run, panel_source, job, args):
+    order = getattr(args, 'epoch_order', 'descending')
     if (job / 'suite').exists():
         plan = verify(job)
         if (plan['run'] != str(run) or plan['panel_source'] != str(panel_source)
-                or args.epochs and generation_epochs(args.epochs) != plan['epochs']
+                or order != plan.get('epoch_order', 'descending')
+                or args.epochs and scheduled_epochs(args.epochs, order) != plan['epochs']
                 or args.image and args.image != plan['image_requested']
                 or args.judge_config and read_json(args.judge_config) != read_json(job / 'suite/judge.json')):
             raise ValueError('Resume inputs differ; repeat the original command or use a new --job-name')
@@ -69,7 +85,7 @@ def prepare(run, panel_source, job, args):
     metadata = verify_run_inputs(run)
     if metadata.get('replay') or metadata['config']['finetuning']['base_quantization'] != 'none':
         raise ValueError('This entry expects a standard BF16 LoRA run, not a replay or QLoRA run')
-    epochs = generation_epochs(args.epochs or ','.join(map(str, evaluation_epochs(metadata))))
+    epochs = scheduled_epochs(args.epochs or ','.join(map(str, evaluation_epochs(metadata))), order)
     if not set(epochs) <= set(evaluation_epochs(metadata)):
         raise ValueError('Requested epochs were not scheduled for this run')
     checkpoints = {}
@@ -118,7 +134,8 @@ def prepare(run, panel_source, job, args):
             'epochs': epochs, 'checkpoints': checkpoints, 'code_sha256': code_hash,
             'generation': generation, 'engine': engine, 'image_requested': args.image or DEFAULT_IMAGE,
             'image': judge.image, 'preflight': preflight, 'questions_per_epoch': 392,
-            'responses': 392 * len(epochs), 'execution_order': 'descending epoch; both panels/all groups; epoch report; next epoch',
+            'responses': 392 * len(epochs), 'epoch_order': order,
+            'execution_order': f'{order} epoch order; both panels/all groups; epoch report; next epoch',
             'files': tree_hashes(stage)}
     write_json(stage / 'plan.json', plan)
     write_json(stage / 'complete.json', {'plan_sha256': file_hash(stage / 'plan.json')})
@@ -177,7 +194,7 @@ def completed_epochs(job, plan):
             completed.append(epoch)
     # No later epoch can be declared complete while an earlier scheduled epoch is unfinished.
     if completed != plan['epochs'][:len(completed)]:
-        raise ValueError('Completed epoch reports do not form the scheduled descending prefix')
+        raise ValueError('Completed epoch reports do not form the scheduled prefix')
     return completed
 
 
@@ -225,6 +242,8 @@ def main():
     parser.add_argument('--panel-dir', default='artifacts/transfer-s2026')
     parser.add_argument('--job-name', default='four-benchmarks-epoch-first-v1')
     parser.add_argument('--epochs', help='Default: all configured checkpoints descending, including epoch 0')
+    parser.add_argument('--epoch-order', choices=('descending', 'listed'), default='descending',
+                        help='listed follows --epochs exactly; default retains descending order')
     parser.add_argument('--image')
     parser.add_argument('--judge-config')
     modes = parser.add_mutually_exclusive_group()
