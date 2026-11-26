@@ -9,6 +9,7 @@
 - [直接阅读：原始顺序前 100 条](math-cot-20k/exports/first-100/README.md)
 - [在 VM 上计算 Math-CoT-20k 全集 Base 似然并生成阅读报告](LIKELIHOOD.md)
 - [高/低似然各 100 条：一次启动两组 16 轮 LoRA 训练](LIKELIHOOD_TRAINING.md)
+- [五种题型各十道：50 条混合训练 16 轮，每轮保留完整检查点](TOPIC_BALANCED_TRAINING.md)
 - [High/Low 四个 benchmark：一次启动 vLLM 评测、判分与报告](LIKELIHOOD_BENCHMARKS.md)
 - [Base 独立解 random 400 / high 100 / low 100 训练题：vLLM、逐题恢复和阅读报告](../TRAINING_BASE_EVALUATION.md)
 - [人工改写 10 条：Base 似然度后，从 Base 训练 128 轮 LoRA](CURATED_TRAINING.md)
